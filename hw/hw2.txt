@@ -1,0 +1,37 @@
+int:    keyword
+void:   keyword
+if:     keyword
+else:   keyword
+return: keyword
+
+{identifier}: identifier
+{number}:     number
+
+<=:   symbol
+<:    symbol
+>=:   symbol
+>:    symbol
+==:   symbol
+!=:   symbol
+
++:    symbol
+-:    symbol
+*:    symbol
+/:    symbol
+=:    symbol
+
+;:    symbol
+,:    symbol
+(:    symbol
+):    symbol
+[:    symbol
+]:    symbol
+{:    symbol
+}:    symbol
+
+/*:   symbol
+
+{newline}:    space
+{whitespace}: space
+
+.:    symbol
