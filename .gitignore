@@ -1,4 +1,7 @@
 cm
 *.o
 
+lex.yy.c
+y.tab.c
+
 build/
