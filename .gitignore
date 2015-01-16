@@ -1,6 +1,7 @@
-cm
 *.o
+*.tmp
 
+cm
 lex.yy.c
 y.tab.c
 
