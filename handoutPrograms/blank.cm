@@ -1,0 +1,9 @@
+void foo(int a) {
+    int b;
+    b = 3;
+    a = a + b;
+  output(a);
+}
+void main(void) {
+  foo(2);
+}

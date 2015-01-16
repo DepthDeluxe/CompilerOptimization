@@ -1,0 +1,13 @@
+int a;
+
+int foo(int b) {
+  b = b + a;
+  return b;
+}
+
+void main(void) {
+  int c;
+  a = 3;
+  c = foo(2);
+  output(c);
+}

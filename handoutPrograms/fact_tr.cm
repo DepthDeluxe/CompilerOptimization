@@ -1,0 +1,14 @@
+int facthelper(int n, int acc) {
+  if (n <= 1) return acc;
+    else return facthelper(n-1, n*acc);
+}
+
+int fact(int n) {
+    return facthelper(n,1);
+}
+
+void main(void) {
+  int n;
+  n = 300;
+  output(fact(n));
+}

@@ -1,0 +1,137 @@
+#ifndef _COMPILER_H
+#define _COMPILER_H
+
+#define pc  7            // Program Counter (next instruction addr)
+#define sp  6            // Stack Pointer (top of stack)
+#define fp  5            // Frame Pointer (top of current frame in stack)
+#define gp  4            // Globals Pointer (top of program)
+#define ac1 1            // Accumulator 1
+#define ac0 0            // Accumulator 0 (return values go here)
+
+#define YYSTYPE ParseTree    // The parser forms a parse tree
+
+#define M 11
+
+// Types: int, array of int, array of ptr to int, function
+enum {intvar, intarr, refarr, func}; 
+
+// Kinds of parse tree nodes. One for each production (P1 : P2)
+enum {prog1, declList1, declList2, decl1, decl2, varDecl1, varDecl2,
+      typeSpec1, typeSpec2, funDecl1, params1, params2, paramList1,
+      paramList2, param1, param2, compStmt1, localDecl1, localDecl2,
+      stmtList1, stmtList2, funStmt1,
+      stmt1, stmt2, stmt3, stmt4, stmt5, expStmt1, expStmt2, selStmt1,
+      selStmt2, iterStmt1, retStmt1, retStmt2, exp1, exp2, var1, var2,
+      simpExp1, simpExp2, relop1, relop2, relop3, relop4, relop5,
+      relop6, addExp1, addExp2, addop1, addop2, term1, term2, mulop1,
+      mulop2, factor1, factor2, factor3, factor4, call1, args1, args2,
+      argList1, argList2};
+
+/* *** structures for Semantic Checking ***********************************
+ * type 'SemRec' (Semantic Record) contains the type and memory 
+ *        location of a variable or function.
+ *
+ * type 'HashNode' is a hash table node. Contains a pointer to a semRec.
+ *
+ * type 'HashTable' is a pointer to a node. An array of these
+ *        HashTable foo[M] or HashTable* foo is the index to the hash table.
+ *
+ * type 'Scope' points to the HashTable for all the variables and functions
+ *        in a given scope
+ * 
+ * type 'SymbolTable' is a pointer to a Scope. The pointer to the current 
+ *        scope has this type.
+ *
+ * type 'TreeNode' is a parse tree node. It contains the name of the 
+ *        grammar rule that made it and a number or identifier name if it 
+ *        was NUM or ID. It also has pointer to any child parse tree nodes.
+ * ************************************************************************/
+
+/* Semantic Record node for a variable or a function.
+ * The type SemRec is a union of two structures
+ * Union means the SemRec is either a v (variable) or f (function)
+ * It is accessed as if the union has two members v and f except that you may
+ * only access one of them. Example: SemRec sr; sr.v.kind = intvar;
+ * The type checker *should* notice if you try to use it as both v and f.
+ */
+typedef union {
+    struct {
+	int kind;            // Variable type (types that aren't func)
+	int base;            // Memory location (usually fp - offset)
+	int offset;
+    } v;
+    struct {
+	int kind;            // Function type (always func)
+	int addr;            // Memory location where the code is stored
+	int numParams;       // Number of parameters
+	int localSpace;      // Space for local variables
+    } f;
+} SemRec;
+
+// Hash Table node. Points to a semantic record.
+typedef struct hnode {
+    char*         key;             // Variable or function name
+    int           theLine;          // Code line in .cm file
+    SemRec*       theSemRec;       // The semantic record.
+    struct hnode* nextNode;
+} HashNode,* HashTable;
+
+// Symbol Table node. Points to a hash table of all the semantic 
+// records in its scope.
+typedef struct snode {
+    int           base;       // Frame Pointer
+    int           used;       // Space used by variables
+    HashTable*    theTable;  // Pointer to this scope's semantic records
+    struct snode* prevScope; // Pointer to previous scope
+} Scope,* SymbolTable;
+
+// Parse Tree node.
+typedef struct pnode {
+    int           kind;          // From the enum above (e.g. prog1)
+    int           numval;        // If it holds a number, its value
+    char        * strval;        // If it holds an id, its name
+    struct pnode* ptr1;          // Pointers to any child nodes
+    struct pnode* ptr2;
+    struct pnode* ptr3;
+    int           line;          // Line number in the code
+
+    int           locals_so_far; // used when making function calls
+    SymbolTable   symTabPtr;        // used for nodes beginning a scope
+} TreeNode,* ParseTree;
+
+extern SymbolTable   symTabPtr;
+extern ParseTree     parseTreePtr;
+extern int           lineno;
+
+// Semantic checking support functions
+extern SemRec*    lookup(int line, SymbolTable scopePtr, char* theName);
+extern void       insert(int line, SymbolTable scopePtr, char* theName, 
+			 SemRec* theRec);
+extern void       beginScope();
+extern void       endScope();
+
+extern void       upScope();
+extern void       downScope();
+
+extern char*      myalloc(size_t size);
+extern TreeNode*  newParseTreeNode();
+extern SemRec*    newSemRec();
+extern HashNode*  newHTableNode();
+extern HashTable* newHashTable();
+extern Scope*     newScope();
+
+// Code Generation support functions
+extern int  emitSkip(int howMany);
+extern void emitBackup(int loc);
+extern void emitRestore(void);
+extern void emitComment(char*  c);
+extern void emitRO(char* op, int r, int s, int t, char* c);
+extern void emitRM(char* op, int r, int d, int s, char* c);
+extern void emitRMAbs( char* op, int r, int a, char*  c);
+extern void push(int reg, char* comm) ;
+extern void pop(int reg, char* comm);
+
+// For debugging purposes
+#define _test(a,b)  if (NULL==a) fprintf(stderr, "ACCESSING NULL %s\n", b);
+
+#endif

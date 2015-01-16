@@ -1,0 +1,13 @@
+int n;
+int tails(void) {
+  if (n < 1)
+	return 1;
+  else {
+	n = n-1;
+	return tails();
+  }
+} 
+void main(void) {
+  n = 8000;
+  output(tails());
+}

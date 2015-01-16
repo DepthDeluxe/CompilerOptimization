@@ -1,0 +1,10 @@
+int foo(int a) {
+  int b;
+  b = 0;
+  output(a);
+  if (a<1) return b;
+  else return a + foo(a-1);
+}
+void main(void) {
+  output(foo(2));
+}

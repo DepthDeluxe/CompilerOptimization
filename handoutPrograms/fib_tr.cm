@@ -1,0 +1,17 @@
+int fibhelper(int k, int prev, int curr) {
+   if (k <=2) {
+    return curr;
+  }
+  else
+   return fibhelper(k-1, curr, prev+curr); 
+}
+
+int fib(int n) {
+  return fibhelper(n, 1, 1);
+}
+
+void main(void) {
+  int n;
+  n = 30;
+  output(fib(n));
+}

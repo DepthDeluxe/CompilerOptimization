@@ -1,0 +1,29 @@
+Compiler layout
+
+The tokenizer is in scan.lex and it is compiled using flex.
+The parser is in parse.yac and it is compiled using yacc.
+The parser builds an almost perfect parse tree. Really obvious things 
+like the braces have been left out to bring it a smidge closer to a 
+syntax tree so it is easier to use. Each node in the tree is a TreeNode.
+The semantic checking is done by a walk on the parse tree in semantic.c.
+The code generation is done by another walk in codegen.c. 
+The TreeNode and symbol table functions are found in 
+main.c. Some definitions and globals are found in 
+compiler.h. The main method to run this compiler is located in main.c
+
+How to compile and run this compiler:
+
+A Makefile is an old way to telling C files to go compile themselves.
+Stand in the cm directory and type
+    make
+Every time you edit the compiler, you will need to compile it.
+
+To run the compiler, type
+  cm < program.cm > program.tm
+If you forget the first <, the program will seem to get stuck. If you forget
+the second >, the program will print all the assembly code to the prompt.
+
+How to remove all compiled files:
+
+Stand in the outer directory and type
+    make clean

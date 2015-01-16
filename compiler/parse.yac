@@ -1,0 +1,600 @@
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include "compiler.h"
+%}
+
+%token ID NUM INT VOID IF ELSE RET LE LT GT GE EQ NE
+
+%%
+/* This yacc file parses C- tokens and produces a tree.
+ * The tree is closer to a parse tree than a syntax tree
+ * for ease of use in the semantic checking and code
+ * generation phases. 
+
+ * tree node attributes are: 
+ *    Kind              kind;    // which tree node kind it is
+ *    int              numval;   // value if its a number
+ *    char *           strval;   // name if its an id
+ *    struct pnode *   ptr1;     // pointers to child tree nodes
+ *    struct pnode *   ptr2;
+ *    struct pnode *   ptr3;
+ *    int              line;     // line number the code was on
+*/
+
+/* 1. prog -> declList */
+prog : declList
+{
+  parseTreePtr = newParseTreeNode();  /* Make a new tree node for it. */
+  parseTreePtr->kind = prog1;         /* Set its kind from the enum types. */
+  parseTreePtr->ptr1 = $1;            /* Point to the component nodes. */
+}
+;
+
+/* 2. declList -> decl declList | decl */
+declList : decl declList
+{
+  $$ = newParseTreeNode();
+  $$->kind = declList1;
+  $$->ptr1 = $1;
+  $$->ptr2 = $2;
+}
+| decl
+{
+  $$ = newParseTreeNode();
+  $$->kind = declList2;
+  $$->ptr1 = $1;
+}
+;
+
+/* 3. decl -> varDecl | funDecl */
+decl : varDecl
+{
+  $$ = newParseTreeNode();
+  $$->kind = decl1;
+  $$->ptr1 = $1;
+}
+| funDecl
+{
+  $$ = newParseTreeNode();
+  $$->kind = decl2;
+  $$->ptr1 = $1;
+}
+;
+
+/* 4. varDecl -> typeSpec ID ';' | typeSpec ID '[' NUM ']' ';' */
+varDecl : typeSpec ID ';'
+{
+  $$ = $2;
+  $$->kind = varDecl1;
+  $$->ptr1 = $1;
+}
+| typeSpec ID '[' NUM ']' ';'
+{
+  $$ = $2;
+  $$->kind = varDecl2;
+  $$->ptr1 = $1;
+  $$->numval = $4->numval;
+  free($4);
+}
+;
+
+/* 5. typeSpec -> INT | VOID */
+typeSpec : INT
+{
+  $$ = newParseTreeNode();
+  $$->kind = typeSpec1;
+}
+| VOID
+{
+  $$ = newParseTreeNode();
+  $$->kind = typeSpec2;
+}
+;
+
+/* 6. funDecl -> typeSpec ID '(' params ')' funStmt  */
+funDecl : typeSpec ID '(' params ')' funStmt
+{
+  $$ = $2;
+  $$->kind = funDecl1;
+  $$->ptr1 = $1;
+  $$->ptr2 = $4;
+  $$->ptr3 = $6;
+}
+;
+
+/* 7. params -> paramList | VOID */
+params : paramList
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = params1;          /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| VOID
+{
+   $$ = newParseTreeNode();    /* Set the node. */
+   $$->kind = params2;         /* Set the kind. */
+}
+;
+
+/* 8. paramList -> param ',' paramList | param */
+paramList : param ',' paramList
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = paramList1;       /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+  $$->ptr2 = $3;
+}
+| param
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = paramList2;       /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+;
+
+/* 9. param -> typeSpec ID | typeSpec ID '[' ']' */
+param : typeSpec ID
+{
+  $$ = $2;                     /* Set the node. */
+  $$->kind = param1;           /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| typeSpec ID '[' ']'
+{
+  $$ = $2;                     /* Set the node. */
+  $$->kind = param2;           /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+;
+
+/* 10. funStmt -> '{' localDecl stmtList '}' */
+funStmt : '{' localDecl stmtList '}'
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = funStmt1;        /* Set the kind. */
+  $$->ptr1 = $2;               /* Set the pointers. */
+  $$->ptr2 = $3;
+}
+;
+
+/* 11. localDecl -> varDecl localDecl | nothing */
+localDecl : varDecl localDecl
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = localDecl1;       /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+  $$->ptr2 = $2;
+}
+|
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = localDecl2;/* Set the kind. */
+}
+;
+
+/* 12. stmtList -> stmt stmtList | nothing */
+stmtList : stmt stmtList
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = stmtList1;        /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+  $$->ptr2 = $2;
+}
+|
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = stmtList2;        /* Set the kind. */
+}
+;
+
+/* 13. stmt -> expStmt | compStmt | selStmt | retStmt */
+stmt : expStmt
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = stmt1;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| compStmt
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = stmt2;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| selStmt
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = stmt3;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| retStmt
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = stmt5;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+;
+
+/* 13a. e_stmt -> expStmt | compStmt | e_selStmt | retStmt */
+e_stmt : expStmt
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = stmt1;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| compStmt
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = stmt2;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| e_selStmt
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = stmt3;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| retStmt
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = stmt5;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+;
+
+/* 14. expStmt -> exp ';' | ';' */
+expStmt : exp ';'
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = expStmt1;         /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| ';'
+{
+  $$ = newParseTreeNode(); /* Set the node. */
+  $$->kind = expStmt2; /* Set the kind. */
+  /* Set the pointers. */
+}
+;
+
+/* 15. compStmt -> '{' localDecl stmtList '}' */
+compStmt : '{' localDecl stmtList '}'
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = compStmt1;        /* Set the kind. */
+  $$->ptr1 = $2;               /* Set the pointers. */
+  $$->ptr2 = $3;
+}
+;
+
+/* 16. selStmt -> if '(' exp ')' stmt | if '(' exp ')' e_stmt else stmt */
+selStmt : IF '(' exp ')' stmt
+{
+  $$ = newParseTreeNode(); /* Set the node. */
+  $$->kind = selStmt1; /* Set the kind. */
+  $$->ptr1 = $3; /* Set the pointers. */
+  $$->ptr2 = $5;
+}
+| IF '(' exp ')' e_stmt ELSE stmt
+{
+  $$ = newParseTreeNode(); /* Set the node. */
+  $$->kind = selStmt2; /* Set the kind. */
+  $$->ptr1 = $3;   /* Set the pointers. */
+  $$->ptr2 = $5;
+  $$->ptr3 = $7;
+}
+;
+
+/* 16a. e_selStmt -> if '(' exp ')' e_stmt else stmt */
+e_selStmt : IF '(' exp ')' e_stmt ELSE e_stmt
+{
+  $$ = newParseTreeNode(); /* Set the node. */
+  $$->kind = selStmt2; /* Set the kind. */
+  $$->ptr1 = $3;   /* Set the pointers. */
+  $$->ptr2 = $5;
+  $$->ptr3 = $7;
+}
+;
+
+/* 18. retStmt -> return ';' | return exp ';' */
+retStmt : RET ';'
+{
+  $$ = newParseTreeNode(); /* Set the node. */
+  $$->kind = retStmt1; /* Set the kind. */
+}
+| RET exp ';'
+{
+  $$ = newParseTreeNode(); /* Set the node. */
+  $$->kind = retStmt2; /* Set the kind. */
+  $$->ptr1 = $2;  /* Set the pointers. */
+}
+;
+
+/* 19. exp -> var '=' exp | simpExp */
+exp : var '=' exp
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = exp1;             /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+  $$->ptr2 = $3;
+}
+| simpExp
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = exp2;             /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+;
+
+/* 20. var -> ID | ID '[' exp ']' */
+var : ID
+{
+  $$ = $1;                     /* Set the node. */
+  $$->kind = var1;             /* Set the kind. */
+}
+| ID '[' exp ']'
+{
+  $$ = $1;                     /* Set the node. */
+  $$->kind = var2;             /* Set the kind. */
+  $$->ptr1 = $3;               /* Set the pointers. */
+}
+;
+
+/* 21. simpExp -> addExp relop addExp | addExp */
+simpExp : addExp relop addExp
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = simpExp1;         /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+  $$->ptr2 = $2;
+  $$->ptr3 = $3;
+}
+| addExp
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = simpExp2;         /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+;
+
+/* 22. relop -> '<' '=' | '<' | '>' | '>' '=' | '=' '=' | '!' '=' */
+relop : LE 
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = relop1; }      /* Set the kind. */  
+| LT  
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = relop2; }
+| GT  
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = relop3; }
+| GE  
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = relop4; }
+| EQ  
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = relop5; }
+| NE  
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = relop6; }
+;
+
+/* 23. addExp -> addExp addop term | term */
+addExp : addExp addop term
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = addExp1;          /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+  $$->ptr2 = $2;
+  $$->ptr3 = $3;
+}
+| term 
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = addExp2;          /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+;
+
+/* 24. addop -> '+' | '-' */
+addop : '+' 
+{ 
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = addop1;     /* Set the kind. */
+}
+| '-'  
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = addop2; 
+}
+;
+
+/* 25. term -> term mulop factor | factor */
+term : term mulop factor
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = term1;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+  $$->ptr2 = $2;
+  $$->ptr3 = $3;
+}
+| factor
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = term2;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+;
+
+/* 26. mulop -> '*' | '/' */
+mulop : '*' 
+{ 
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = mulop1;           /* Set the kind. */ 
+}
+| '/'  
+{ 
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = mulop2; 
+}
+;
+
+/* 27. factor -> '(' exp ')' | var | call | NUM */
+factor : '(' exp ')'
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = factor1;          /* Set the kind. */
+  $$->ptr1 = $2;               /* Set the pointers. */
+}
+| var
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = factor2;          /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| call
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = factor3;          /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+| NUM
+{
+  $$ = $1;                     /* Set the node. */
+  $$->kind = factor4;          /* Set the kind. */
+}
+;
+
+/* 28. call -> ID '(' args ')' */
+call : ID '(' args ')'
+{
+  $$ = $1;                     /* Set the node. */
+  $$->kind = call1;            /* Set the kind. */
+  $$->ptr1 = $3;               /* Set the pointers. */
+}
+;
+
+/* 29. args -> argList | nothing */
+args : argList
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = args1;            /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+|
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = args2;            /* Set the kind. */
+}
+;
+
+/* 30. argList -> exp ',' argList | exp */
+argList : exp ',' argList
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = argList1;         /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+  $$->ptr2 = $3;
+}
+| exp
+{
+  $$ = newParseTreeNode();     /* Set the node. */
+  $$->kind = argList2;         /* Set the kind. */
+  $$->ptr1 = $1;               /* Set the pointers. */
+}
+;
+
+%%
+
+#include "lex.yy.c"
+
+yyerror(char *s) {
+  fprintf(stderr,"Syntactic error!  Line %d, unexpected token ",lineno);
+  switch (yychar) {
+  case ';':  
+    fprintf(stderr,"\";\".\n");
+    break;
+  case '[':  
+    fprintf(stderr,"\"[\".\n");
+    break;
+  case ']':  
+    fprintf(stderr,"\"]\".\n");
+    break;
+  case '(':
+    fprintf(stderr,"\"(\".\n");
+    break;
+  case ')':
+    fprintf(stderr,"\")\".\n");
+    break;
+  case ',':
+    fprintf(stderr,"\",\".\n");
+    break;
+  case '{':
+    fprintf(stderr,"\"{\".\n");
+    break;
+  case '}':
+    fprintf(stderr,"\"{\".\n");
+    break;
+  case '=':
+    fprintf(stderr,"\"=\".\n");
+    break;
+  case LE:
+    fprintf(stderr,"\"<=\".\n");
+    break;
+  case LT:
+    fprintf(stderr,"\"<\".\n");
+    break;
+  case GT:
+    fprintf(stderr,"\">\".\n");
+    break;
+  case GE:
+    fprintf(stderr,"\">=\".\n");
+    break;
+  case EQ:
+    fprintf(stderr,"\"==\".\n");
+    break;
+  case NE:
+    fprintf(stderr,"\"!=\".\n");
+    break;
+  case '+':
+    fprintf(stderr,"\"+\".\n");
+    break;
+  case '-':
+    fprintf(stderr,"\"-\".\n");
+    break;
+  case '*':
+    fprintf(stderr,"\"*\".\n");
+    break;
+  case '/':
+    fprintf(stderr,"\"/\".\n");
+    break;
+  case INT:
+    fprintf(stderr,"\"int\".\n");
+    break;
+  case VOID:
+    fprintf(stderr,"\"void\".\n");
+    break;
+  case IF:
+    fprintf(stderr,"\"if\".\n");
+    break;
+  case ELSE:
+    fprintf(stderr,"\"else\".\n");
+    break;
+  case RET:
+    fprintf(stderr,"\"return\".\n");
+    break;
+  case ID:
+    fprintf(stderr,"\"%s\".\n",yylval->strval);
+    break;
+  case NUM:
+    fprintf(stderr,"\"%d\".\n",yylval->numval);
+    break;
+  }
+  exit(1);
+}
+

@@ -1,0 +1,15 @@
+int a;
+int b[4];
+int c;
+
+void main(void) {
+    int d;
+    int e;
+    a = 1;
+    b[0] = 2;
+    b[3] = 3;
+    c = 4;
+    d = 5;
+    e = 6;
+    output(a);
+}
