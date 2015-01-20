@@ -13,7 +13,7 @@ int lineno = 1;
 letter     [a-zA-Z]
 digit      [0-9]
 identifier {letter}+
-number     {digit}+
+number     -?{digit}+
 whitespace [ \t\r]+
 newline    \n
 
@@ -33,19 +33,19 @@ newline    \n
               yylval->numval = atoi(yytext);
               return NUM;}
 
-"<="         {return LE;} 
-"<"          {return LT;} 
-">="         {return GE;} 
-">"          {return GT;} 
-"=="         {return EQ;} 
-"!="         {return NE;} 
+"<="         {return LE;}
+"<"          {return LT;}
+">="         {return GE;}
+">"          {return GT;}
+"=="         {return EQ;}
+"!="         {return NE;}
 
-"+"          {return '+';}           
-"-"          {return '-';} 
-"*"          {return '*';} 
-"/"          {return '/';} 
-"="          {return '=';} 
- 
+"+"          {return '+';}
+"-"          {return '-';}
+"*"          {return '*';}
+"/"          {return '/';}
+"="          {return '=';}
+
 ";"          {return ';';}
 ","          {return ',';}
 "("          {return '(';}
