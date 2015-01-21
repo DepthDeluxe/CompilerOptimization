@@ -46,26 +46,26 @@ void semanticCheck(TreeNode* nodePtr) {
 /* 1. prog -> declList */
 static void program(TreeNode* nodePtr) {
     SemRec* semRecPtr;
-    
+
     // Setup the top scope
     beginScope();                            // Push sym tab scope
     symTabPtr->base = gp;                    // Base = gp reg (4)
     symTabPtr->used = 0;                     // No spc used yet
-    
+
     // Make a semantic rec for the input function
     semRecPtr = newSemRec();
     semRecPtr->f.kind = func;
     semRecPtr->f.numParams = 0;
     semRecPtr->f.localSpace = 0;
     insert(nodePtr->line, symTabPtr,"input",semRecPtr);
-    
+
     // Make a semantic rec for the output function
     semRecPtr = newSemRec();
     semRecPtr->f.kind = func;
     semRecPtr->f.numParams = 1;
     semRecPtr->f.localSpace = 0;
     insert(nodePtr->line, symTabPtr,"output",semRecPtr);
-    
+
     declarationList(nodePtr->ptr1);         // Check declList code
 
     // Clean up the top scope
@@ -102,13 +102,13 @@ static void varDeclaration(TreeNode* nodePtr) {
 
 	// Make sure it's not void
 	if (nodePtr->ptr1->kind == typeSpec2) {
-	    fprintf(stderr, "Static semantic error!  Line %d, ", 
+	    fprintf(stderr, "Static semantic error!  Line %d, ",
 		    nodePtr->line);
-	    fprintf(stderr, "variable \"%s\" declared void.\n", 
+	    fprintf(stderr, "variable \"%s\" declared void.\n",
 		    nodePtr->strval);
 	    exit(1);
 	}
-	
+
 	// Make a semantic record for it
 	semRecPtr = newSemRec();
 	semRecPtr->v.kind = intvar;
@@ -124,16 +124,16 @@ static void varDeclaration(TreeNode* nodePtr) {
 
 	// Make sure it's not void
 	if (nodePtr->ptr1->kind == typeSpec2) { // VOID ID [NUM] is illegal
-	    fprintf(stderr, "Static semantic error!  Line %d, ", 
+	    fprintf(stderr, "Static semantic error!  Line %d, ",
 		    nodePtr->line);
-	    fprintf(stderr, "array \"%s\" declared void.\n", 
+	    fprintf(stderr, "array \"%s\" declared void.\n",
 		    nodePtr->strval);
 	    exit(1);
 	}
 
         // Make sure it has length > 0
 	if (nodePtr->numval < 1) { // Num must be > 0
-	    fprintf(stderr, "Static semantic error!  Line %d, ", 
+	    fprintf(stderr, "Static semantic error!  Line %d, ",
 		    nodePtr->line);
 	    fprintf(stderr,"array \"%s\" has %d elements.\n",
 		    nodePtr->strval, nodePtr->numval);
@@ -147,8 +147,8 @@ static void varDeclaration(TreeNode* nodePtr) {
 	semRecPtr->v.offset = -symTabPtr->used;
 	symTabPtr->used += nodePtr->numval;
 	insert(nodePtr->line, symTabPtr, nodePtr->strval,semRecPtr);
-	locals += nodePtr->numval; 
-    } 
+	locals += nodePtr->numval;
+    }
 }
 
 /* 6. funDecl -> typeSpec ID '(' params ')' compStmt  */
@@ -160,19 +160,19 @@ static void funDeclaration(TreeNode* nodePtr) {
      semRecPtr->f.numParams = -1;            // Dummy value
      semRecPtr->f.localSpace = -1;           // Dummy value
      insert(nodePtr->line, symTabPtr, nodePtr->strval,semRecPtr);
-     
+
      beginScope();                           // Push scope onto sym tab
      symTabPtr->base = fp;                   // Base = FP
      symTabPtr->used = 2;                    // Spc for old fp, return addr
      theNumParams = 0;                       // No params yet
-     
+
      params(nodePtr->ptr2);                  // Check params code
-  
+
      semRecPtr->f.numParams = theNumParams;  // Record num of params
      locals = 0;                             // No spc for locals yet either
-     
+
      functionStmt(nodePtr->ptr3);            // Check compStmt code
-     
+
      semRecPtr->f.localSpace = locals;
      nodePtr->symTabPtr = symTabPtr;         // Save symbol table for later use
      symTabPtr = symTabPtr->prevScope;       // Pop scope
@@ -202,7 +202,7 @@ static void param(TreeNode* nodePtr) {
 
 	// Make sure its not type void. 'void ID' is not legal.
 	if (nodePtr->ptr1->kind == typeSpec2) {
-	    fprintf(stderr, "Static semantic error!  Line %d, ", 
+	    fprintf(stderr, "Static semantic error!  Line %d, ",
 		    nodePtr->line);
 	    fprintf(stderr, "variable parameter \"%s\" declared void.\n",
 		    nodePtr->strval);
@@ -227,7 +227,7 @@ static void param(TreeNode* nodePtr) {
 		    nodePtr->strval);
 	    exit(1);
 	}
-	
+
 	// Make a semantic record for the parameter (local array variable).
 	semRecPtr = newSemRec();           // new semantic record (var)
 	semRecPtr->v.kind = refarr;        // Kind = reference array
@@ -283,12 +283,12 @@ static void expressionStmt(TreeNode* nodePtr) {
 
 /* 15. compStmt -> '{' localDecl stmtList '}' */
 static void compoundStmt(TreeNode* nodePtr) {
-    beginScope();                        // Push scope onto sym tab     
-    symTabPtr->base = fp;                // Base = FP                      
-    symTabPtr->used = symTabPtr->prevScope->used; 
+    beginScope();                        // Push scope onto sym tab
+    symTabPtr->base = fp;                // Base = FP
+    symTabPtr->used = symTabPtr->prevScope->used;
                  // Same space amount as outer scope
-    localDeclaration(nodePtr->ptr1);     // Check localDecl code  
-    statementList(nodePtr->ptr2);        // Check stmtList code    
+    localDeclaration(nodePtr->ptr1);     // Check localDecl code
+    statementList(nodePtr->ptr2);        // Check stmtList code
     nodePtr->symTabPtr = symTabPtr;      // Save symbol table for later use
     symTabPtr = symTabPtr->prevScope;    // Pop scope
 }
@@ -325,15 +325,15 @@ static void expression(TreeNode* nodePtr) {
 /* 20. var -> ID | ID '[' exp ']' */
 static void var(TreeNode* nodePtr, int rlval) {
     SemRec* semRecPtr;
-    
+
     // For variables...
     if (nodePtr->kind == var1) {
 	semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->strval);
 	if (rlval == 0) { // we want the lvalue
-	    
+
 	    // Make sure we don't take the l-value of something not an int.
 	    if (semRecPtr->v.kind != intvar) {
-		fprintf(stderr, "Static semantic error!  Line %d, ", 
+		fprintf(stderr, "Static semantic error!  Line %d, ",
 			nodePtr->line);
 		fprintf(stderr, "identifier \"%s\" not a legal l-value.\n",
 			nodePtr->strval);
@@ -341,12 +341,12 @@ static void var(TreeNode* nodePtr, int rlval) {
 	    }
 	}
 	else {// we want the rvalue
-	    
+
 	    // Make sure we don't take the r-value of a function
 	    if (semRecPtr->v.kind == func) {
-		fprintf(stderr, "Static semantic error!  Line %d, ", 
+		fprintf(stderr, "Static semantic error!  Line %d, ",
 			nodePtr->line);
-		fprintf(stderr, "identifier \"%s\" not a legal r-value.\n", 
+		fprintf(stderr, "identifier \"%s\" not a legal r-value.\n",
 			nodePtr->strval);
 		exit(1);
 	    }
@@ -355,32 +355,32 @@ static void var(TreeNode* nodePtr, int rlval) {
     // For array variables...
     } else if (nodePtr->kind == var2) {
 	expression(nodePtr->ptr1);          // Check exp code
-	
+
 	semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->strval);
-	
+
 	if (rlval == 0){ // we want the lvalue
 
 	    // Make sure we only take the l-value of an array.
 	    if (semRecPtr->v.kind != intarr && semRecPtr->v.kind != refarr) {
-		fprintf(stderr, "Static semantic error!  Line %d, ", 
+		fprintf(stderr, "Static semantic error!  Line %d, ",
 			nodePtr->line);
 		fprintf(stderr, "identifier \"%s\" not a legal l-value.\n",
 			nodePtr->strval);
 		exit(1);
 	    }
-	    
+
 	} else { // we want the rvalue
 
 	    // Make sure we only take the r-value of an array.
 	    if (semRecPtr->v.kind != intarr && semRecPtr->v.kind != refarr) {
-		fprintf(stderr, "Static semantic error!  Line %d, ", 
+		fprintf(stderr, "Static semantic error!  Line %d, ",
 			nodePtr->line);
 		fprintf(stderr, "identifier \"%s\" not a legal r-value.\n",
 			nodePtr->strval);
 		exit(1);
 	    }
 	}
-    } 
+    }
 }
 
 /* 21. simpExp -> addExp relop addExp | addExp */
@@ -392,12 +392,12 @@ static void simpleExp(TreeNode* nodePtr) {
 
 	_test(nodePtr->ptr2, "simpexp->relop");
 	if (nodePtr->ptr2->kind < relop1 || nodePtr->ptr2->kind > relop6) {
-	    fprintf(stderr, "Static semantic error!  Line %d, ", 
+	    fprintf(stderr, "Static semantic error!  Line %d, ",
 		    nodePtr->line);
 	    fprintf(stderr, "unknown relational operator.\n");
 	}
 
-    } else //if (nodePtr->kind == simpExp2) 
+    } else //if (nodePtr->kind == simpExp2)
 	additiveExp(nodePtr->ptr1);           // Check addExp code
 }
 
@@ -445,7 +445,7 @@ static void call(TreeNode* nodePtr) {
     else
 	nodePtr->locals_so_far = locals;
 }
-     
+
 /* 29. args -> argList | empty */
 static void args(TreeNode* nodePtr) {
     if (nodePtr->kind == args1)
@@ -456,7 +456,7 @@ static void args(TreeNode* nodePtr) {
 /* 30. argList -> exp ',' argList | exp */
 static void argList(TreeNode* nodePtr) {
     if (nodePtr->kind == argList1) {
-	expression(nodePtr->ptr1);            // Check exp code 
+	expression(nodePtr->ptr1);            // Check exp code
 	argList(nodePtr->ptr2);               // Check arglist code
     } else //if (nodePtr->kind == argList2)
 	expression(nodePtr->ptr1);            // Check exp code
