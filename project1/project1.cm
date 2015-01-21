@@ -1,8 +1,11 @@
+/* array that will hold memoization */
 int memoizedUarray[30];
 
+/* initialized memoizedUarray */
 void initUarray(int index) {
   if (index >= 30) { return; }
 
+  /* set the proper values depending on the index */
   if (index == 0) {
     memoizedUarray[index] = 0;
   }
@@ -16,6 +19,7 @@ void initUarray(int index) {
   initUarray(index + 1);
 }
 
+/* recursively computes the fibonacci numbers using memoization */
 int recursiveUfib(int num) {
   if (memoizedUarray[num] > -1) {
     return memoizedUarray[num];
@@ -26,17 +30,22 @@ int recursiveUfib(int num) {
   return memoizedUarray[num];
 }
 
-int outputUfibs(int num) {
-  if (num >= 30) { return -1; }
-
-  output( recursiveUfib( num ) );
-  outputUfibs( num + 1 );
-
-  return 0;
-}
-
+/* main program, recuses itself */
 void main(void) {
+  int i;
+
   initUarray(0);
 
-  outputUfibs(0);
+  /* get input from user and break main if it is out of bounds */
+  i = input();
+  if ( i < 0 ) {
+    return;
+  }
+  else if ( i > 29 ) {
+    return;
+  }
+
+  output( recursiveUfib(i) );
+
+  main();
 }

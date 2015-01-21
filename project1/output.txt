@@ -1,0 +1,13 @@
+Printing instruction count now on.
+Enter value for IN instruction: OUT instruction prints: 0
+Enter value for IN instruction: OUT instruction prints: 1
+Enter value for IN instruction: OUT instruction prints: 8
+Enter value for IN instruction: OUT instruction prints: 21
+Enter value for IN instruction: OUT instruction prints: 34
+Enter value for IN instruction: OUT instruction prints: 28657
+Enter value for IN instruction: OUT instruction prints: 4181
+Enter value for IN instruction: HALT: 0,0,0
+Number of instructions executed = 24831.
+      (0 were NOPs --> 24831 real instrs) 
+Halted
+Simulation done.
