@@ -6,3 +6,5 @@ lex.yy.c
 y.tab.c
 
 build/
+
+lex-rules.txt
