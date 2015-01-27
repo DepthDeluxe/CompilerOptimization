@@ -13,7 +13,7 @@ int lineno = 1;
 letter     [a-zA-Z]
 digit      [0-9]
 identifier {letter}+
-number     -?{digit}+
+number     {digit}+
 whitespace [ \t\r]+
 newline    \n
 
@@ -67,6 +67,8 @@ newline    \n
                 if (c == '/')
                   done = 1;
                 } while (!done);}
+
+
 
 {newline}    {lineno++;}
 
