@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "compiler.h"
+#include "support.h"
 
 // Headers for all functions in this file
 static void program(TreeNode* nodePtr);
@@ -40,6 +42,9 @@ int         theNumParams;    // Number of params in the current function
 /*                                                                          */
 /****************************************************************************/
 void semanticCheck(TreeNode* nodePtr) {
+    fprintf(stderr, "printing out tree...\n");
+    printNode(nodePtr, NULL);
+
     program(nodePtr);
 }
 
