@@ -11,11 +11,15 @@ fi
 popd
 pushd handoutPrograms
 CC="../compiler/cm"
+
+# blank the build directiory
+rm -rf build
 mkdir -p build
 
 test_files=$(ls -1 *.cm)
 for file in $test_files; do
-  $CC < "$file" > "build/${file}.tm"
+  name=$(echo "$file" | cut -d'.' -f 1)
+  $CC < "$file" > "build/${name}.tm"
 
   if [ $? -ne 0 ]; then
     echo "Error: failed to build $file!"
@@ -29,7 +33,16 @@ test_files=$(ls -1 *.tm)
 rm -rf raw-output.txt
 
 for file in $test_files; do
-  ftm "./$file" >> raw-output.txt
+  # get the name of the file
+  name=$(echo "$file" | cut -d'.' -f 1)
+
+  # if there is a text file with the same name, pipe it into the input of the
+  # program when we are running
+  prefix=""
+  if [ -a "../${name}.txt" ]; then
+    prefix="echo \"../${name}.txt\" |"
+  fi
+  $prefix ftm "./$file" >> raw-output.txt
 
   if [ $? -ne 0 ]; then
     echo "Error: failed to run $file!"

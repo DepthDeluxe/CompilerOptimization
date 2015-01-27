@@ -1,7 +1,6 @@
 OUT instruction prints: 5
 OUT instruction prints: 5
 OUT instruction prints: 6
-Enter value for IN instruction: Enter value for IN instruction: OUT instruction prints: 1
 OUT instruction prints: 0
 OUT instruction prints: 0
 OUT instruction prints: 832040
