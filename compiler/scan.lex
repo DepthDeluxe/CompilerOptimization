@@ -6,6 +6,11 @@
 #include "compiler.h"
 
 int lineno = 1;
+
+#define STATE1 1
+#define STATE2 2
+#define STATE3 3
+#define STATE4 4
 %}
 
 /* token ID NUM INT VOID IF ELSE RET LE LT GT GE EQ NE */
@@ -55,18 +60,68 @@ newline    \n
 "{"          {return '{';}
 "}"          {return '}';}
 
-"/*"         {char c;
-              int done = 0;
-              do {
-                while ( (c = input()) != '*')
-                  if (c == '\n')
-                    lineno++;
-                while ( (c = input()) == '*') ;
-                if (c == '\n')
-                  lineno++;
-                if (c == '/')
-                  done = 1;
-                } while (!done);}
+"/*"         {
+              // state machine to handle nested loops, increments nested_count if it gets
+              // another '/*' within so it knows to expect another '*/' pair before
+              // breaking out.
+              int state = STATE1;
+              int nested_count = 0;
+              while ( state != STATE4 ) {
+                // get the next character
+                char c = input();
+
+                // increment the line number if we get a newline while processing
+                if ( c == '\n' ) { lineno++; }
+                switch(state) {
+                case STATE1:
+                  // this is the initial state.  If we get a '*', go to state that handles
+                  // ending comments.  If we get a '/', then go into state that handles
+                  // possible nested starting comments.  Otherwise, stay in this state
+                  if ( c == '*' ) {
+                    state = STATE2;
+                  } else if ( c == '/' ) {
+                    state = STATE3;
+                  }
+                  break;
+                case STATE2:
+                  // in this state, we have already encountered a *.  Go into same state if
+                  // we get another '*'.  Go into STATE1 if we get a '/' if the
+                  // nested_count is >0, otherwise go into ending state.  Finally, go back
+                  // to STATE1 if we get another character
+                  if ( c == '*' ) {
+                    state = STATE2;
+                  } else if ( c == '/' ) {
+                    // if the count is greater than 0 (i.e. we have nested comments), then go
+                    // back to starting state and decrement the counter.  Otherwise, go to
+                    // ending state and finish.
+                    if ( nested_count > 0 ) {
+                      state = STATE1;
+                    } else {
+                      state = STATE4;
+                    }
+
+                    // decrement the nested_count counter
+                    nested_count--;
+                  } else {
+                    state = STATE1;
+                  }
+                  break;
+                case STATE3:
+                  // in this state, we already encountered a '/'.  If we get another, stay
+                  // in the same state.  If we get a '*', increment nested_counter and go
+                  // back to starting state.  Otherwise, just go back to starting state.
+                  if ( c == '/' ) {
+                    state = STATE3;
+                  } else if ( c == '*' ) {
+                    nested_count++;
+                    state = STATE1;
+                  } else {
+                    state = STATE1;
+                  }
+                  break;
+                }
+              }
+            }
 
 
 
