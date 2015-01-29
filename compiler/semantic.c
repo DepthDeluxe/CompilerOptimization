@@ -302,10 +302,10 @@ static void compoundStmt(TreeNode* nodePtr) {
 /* 16. selStmt -> if '(' exp ')' stmt | if '(' exp ')' stmt else stmt */
 /* 16a. e_selStmt -> if '(' exp ')' e_stmt else stmt */
 static void selectionStmt(TreeNode* nodePtr) {
-    if (nodePtr->kind == selStmt1) {
+    if (nodePtr->kind == selStmtIf) {
     expression(nodePtr->ptr1);            // Check exp code
     statement(nodePtr->ptr2);             // Check stmt code
-    } else { //if (nodePtr->kind == selStmt2)
+    } else { //if (nodePtr->kind == selStmtIfElse)
     expression(nodePtr->ptr1);            // Check exp code
     statement(nodePtr->ptr2);             // Check stmtExp code
     statement(nodePtr->ptr3);             // Check stmtComp code
@@ -314,17 +314,17 @@ static void selectionStmt(TreeNode* nodePtr) {
 
 /* 18. retStmt -> return ';' | return exp ';' */
 static void returnStmt(TreeNode* nodePtr) {
-    //if (nodePtr->kind == retStmt1)          // No checks needed.
-    if (nodePtr->kind == retStmt2)
+    //if (nodePtr->kind == retStmtVoid)          // No checks needed.
+    if (nodePtr->kind == retStmtExp)
     expression(nodePtr->ptr1);            // Check exp code
 }
 
 /* 19. exp -> var '=' exp | simpExp */
 static void expression(TreeNode* nodePtr) {
-    if (nodePtr->kind == exp1) {
+    if (nodePtr->kind == expAssign) {
     expression(nodePtr->ptr2);            // Check exp code
     var(nodePtr->ptr1, 0);                // Check var code
-    } else //if (nodePtr->kind == exp2)
+    } else //if (nodePtr->kind == expSimple)
     simpleExp(nodePtr->ptr1);             // Check simpleExp code
 }
 
@@ -333,7 +333,7 @@ static void var(TreeNode* nodePtr, int rlval) {
     SemRec* semRecPtr;
 
     // For variables...
-    if (nodePtr->kind == var1) {
+    if (nodePtr->kind == varSingle) {
     semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
     if (rlval == 0) { // we want the lvalue
 
@@ -359,7 +359,7 @@ static void var(TreeNode* nodePtr, int rlval) {
     }
 
     // For array variables...
-    } else if (nodePtr->kind == var2) {
+    } else if (nodePtr->kind == varArray) {
     expression(nodePtr->ptr1);          // Check exp code
 
     semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);

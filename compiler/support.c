@@ -68,23 +68,23 @@ void printNodeType(TreeNode* node) {
   case expStmtVoid:
     type = "xst";
     break;
-  case selStmt1:
-  case selStmt2:
+  case selStmtIf:
+  case selStmtIfElse:
     type = "sst";
     break;
   case iterStmt1:
     type = "ist";
     break;
-  case retStmt1:
-  case retStmt2:
+  case retStmtVoid:
+  case retStmtExp:
     type = "rst";
     break;
-  case exp1:
-  case exp2:
+  case expAssign:
+  case expSimple:
     type = "exp";
     break;
-  case var1:
-  case var2:
+  case varSingle:
+  case varArray:
     type = "var";
     break;
   case simpExp1:

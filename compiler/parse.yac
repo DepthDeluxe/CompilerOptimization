@@ -276,14 +276,14 @@ compStmt : '{' localDecl stmtList '}'
 selStmt : IF '(' exp ')' stmt
 {
   $$ = newParseTreeNode(); /* Set the node. */
-  $$->kind = selStmt1; /* Set the kind. */
+  $$->kind = selStmtIf; /* Set the kind. */
   $$->ptr1 = $3; /* Set the pointers. */
   $$->ptr2 = $5;
 }
 | IF '(' exp ')' e_stmt ELSE stmt
 {
   $$ = newParseTreeNode(); /* Set the node. */
-  $$->kind = selStmt2; /* Set the kind. */
+  $$->kind = selStmtIfElse; /* Set the kind. */
   $$->ptr1 = $3;   /* Set the pointers. */
   $$->ptr2 = $5;
   $$->ptr3 = $7;
@@ -294,7 +294,7 @@ selStmt : IF '(' exp ')' stmt
 e_selStmt : IF '(' exp ')' e_stmt ELSE e_stmt
 {
   $$ = newParseTreeNode(); /* Set the node. */
-  $$->kind = selStmt2; /* Set the kind. */
+  $$->kind = selStmtIfElse; /* Set the kind. */
   $$->ptr1 = $3;   /* Set the pointers. */
   $$->ptr2 = $5;
   $$->ptr3 = $7;
@@ -305,12 +305,12 @@ e_selStmt : IF '(' exp ')' e_stmt ELSE e_stmt
 retStmt : RET ';'
 {
   $$ = newParseTreeNode(); /* Set the node. */
-  $$->kind = retStmt1; /* Set the kind. */
+  $$->kind = retStmtVoid; /* Set the kind. */
 }
 | RET exp ';'
 {
   $$ = newParseTreeNode(); /* Set the node. */
-  $$->kind = retStmt2; /* Set the kind. */
+  $$->kind = retStmtExp; /* Set the kind. */
   $$->ptr1 = $2;  /* Set the pointers. */
 }
 ;
@@ -319,14 +319,14 @@ retStmt : RET ';'
 exp : var '=' exp
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = exp1;             /* Set the kind. */
+  $$->kind = expAssign;             /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
   $$->ptr2 = $3;
 }
 | simpExp
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = exp2;             /* Set the kind. */
+  $$->kind = expSimple;             /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 ;
@@ -335,12 +335,12 @@ exp : var '=' exp
 var : ID
 {
   $$ = $1;                     /* Set the node. */
-  $$->kind = var1;             /* Set the kind. */
+  $$->kind = varSingle;             /* Set the kind. */
 }
 | ID '[' exp ']'
 {
   $$ = $1;                     /* Set the node. */
-  $$->kind = var2;             /* Set the kind. */
+  $$->kind = varArray;             /* Set the kind. */
   $$->ptr1 = $3;               /* Set the pointers. */
 }
 ;

@@ -201,7 +201,7 @@ static void compoundStmt(TreeNode* nodePtr) {
 /* 16a. e_selStmt -> if '(' exp ')' e_stmt else stmt */
 static void selectionStmt(TreeNode* nodePtr) {
     int loc, loc2, loc3, loc4;
-    if (nodePtr->kind == selStmt1) {
+    if (nodePtr->kind == selStmtIf) {
 	expression(nodePtr->ptr1);     // Output exp code
 	loc = emitSkip(1);             // Save space for "if" test
 	statement(nodePtr->ptr2);      // Output stmt code
@@ -211,7 +211,7 @@ static void selectionStmt(TreeNode* nodePtr) {
 	emitRMAbs("JEQ",ac0,loc2,
 		  "  if test: Jump to end if false (exp == 0)");
 	emitRestore();                 // Restore numbering
-    } else { //if (nodePtr->kind == selStmt2)
+    } else { //if (nodePtr->kind == selStmtIfElse)
 
 	expression(nodePtr->ptr1);        // Output exp code
 	loc = emitSkip(1);                // Skip jump1 loc
@@ -237,9 +237,9 @@ static void selectionStmt(TreeNode* nodePtr) {
 
 /* 18. retStmt -> return ';' | return exp ';' */
 static void returnStmt(TreeNode* nodePtr) {
-    if (nodePtr->kind == retStmt1) {
+    if (nodePtr->kind == retStmtVoid) {
 	emitRM("LD",pc,-1,fp,"Returning (end of function)");   // return. set PC
-    } else { //if (nodePtr->kind == retStmt2)
+    } else { //if (nodePtr->kind == retStmtExp)
 	expression(nodePtr->ptr1);       // Output exp code (ans in ac0)
 	emitRM("LD",pc,-1,fp,"Returning (end of function)");  // return. set PC
     }
@@ -247,13 +247,13 @@ static void returnStmt(TreeNode* nodePtr) {
 
 /* 19. exp -> var '=' exp | simpExp */
 static void expression(TreeNode* nodePtr) {
-    if (nodePtr->kind == exp1) {
+    if (nodePtr->kind == expAssign) {
 	expression(nodePtr->ptr2);         // Output exp code (ans in ac0)
 	push(ac0,"  assignment: save value");
 	var(nodePtr->ptr1, 0);             // Output var code (addr in ac1)
 	pop(ac0,"  assignment: retrieve value");
 	emitRM("ST",ac0,0,ac1,"  assignment: variable = dMem[ac1] = value");
-    } else //if (nodePtr->kind == exp2) {
+    } else //if (nodePtr->kind == expSimple) {
 	simpleExp(nodePtr->ptr1);
 }
 
@@ -261,7 +261,7 @@ static void expression(TreeNode* nodePtr) {
 static void var(TreeNode* nodePtr, int rlval) {
     SemRec* semRecPtr;
     int loc, loc2;
-    if (nodePtr->kind == var1) {
+    if (nodePtr->kind == varSingle) {
 	semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
 	if (rlval == 0)  // we want the lvalue, ac1 = var addr
 	    emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,
@@ -283,7 +283,7 @@ static void var(TreeNode* nodePtr, int rlval) {
       default:
         break;
 	    }
-    } else { //if (nodePtr->kind == var2)
+    } else { //if (nodePtr->kind == varArray)
 
 	expression(nodePtr->ptr1);          // Output exp code
 
