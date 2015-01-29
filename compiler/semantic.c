@@ -80,19 +80,19 @@ static void program(TreeNode* nodePtr) {
 
 /* 2. declList -> decl declList | decl */
 static void declarationList(TreeNode* nodePtr) {
-    if (nodePtr->kind == declList1) {
+    if (nodePtr->kind == declListNormal) {
     declaration(nodePtr->ptr1);           // Check declaration code
     declarationList(nodePtr->ptr2);       // Check declList code
     }
-    else //if (nodePtr->kind == declList2)
+    else //if (nodePtr->kind == declListSingle)
     declaration(nodePtr->ptr1);           // Check declaration code
 }
 
 /* 3. decl -> varDecl | funDecl */
 static void declaration(TreeNode* nodePtr) {
-    if (nodePtr->kind == decl1)
+    if (nodePtr->kind == declVar)
     varDeclaration(nodePtr->ptr1);
-    else //if (nodePtr->kind == decl2)
+    else //if (nodePtr->kind == declFun)
     funDeclaration(nodePtr->ptr1);
 }
 
@@ -102,7 +102,7 @@ static void varDeclaration(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
     // For variables...
-    if (nodePtr->kind == varDecl1) {
+    if (nodePtr->kind == varDeclSingle) {
       // check to see if string is not NULL
       _test(nodePtr->ptr1,"vardecl->typespec");
 
@@ -125,7 +125,7 @@ static void varDeclaration(TreeNode* nodePtr) {
       locals++;
     }
     // For array variables
-    else { //if (nodePtr->kind == varDecl2)
+    else { //if (nodePtr->kind == varDeclArray)
       _test(nodePtr->ptr1,"vardecl->typespec");
 
       // Make sure it's not void
@@ -186,17 +186,17 @@ static void funDeclaration(TreeNode* nodePtr) {
 
 /* 7. params -> paramList | VOID */
 static void params(TreeNode* nodePtr) {
-    if (nodePtr->kind == params1)
+    if (nodePtr->kind == paramsNormal)
     paramList(nodePtr->ptr1);             // Check paramList code
-    //else if (nodePtr->kind == params2)      // No checks needed.
+    //else if (nodePtr->kind == paramsVoid)      // No checks needed.
 }
 
 /* 8. paramList -> param ',' paramList | param */
 static void paramList(TreeNode* nodePtr) {
-    if(nodePtr->kind == paramList1) {
+    if(nodePtr->kind == paramListNormal) {
     param(nodePtr->ptr1);                 // Check param code
     paramList(nodePtr->ptr2);             // Check paramList code
-    } else //if (nodePtr->kind == paramList2)
+    } else //if (nodePtr->kind == paramListSingle)
     param(nodePtr->ptr1);                 // Ouput param code
 }
 

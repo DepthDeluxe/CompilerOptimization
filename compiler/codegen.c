@@ -90,19 +90,19 @@ static void program(TreeNode* nodePtr) {
 
 /* 2. declList -> decl declList | decl */
 static void declarationList(TreeNode* nodePtr) {
-    if (nodePtr->kind == declList1) {
+    if (nodePtr->kind == declListNormal) {
 	declaration(nodePtr->ptr1);
 	declarationList(nodePtr->ptr2);
     }
-    else //if (nodePtr->kind == declList2) {
+    else //if (nodePtr->kind == declListSingle) {
 	declaration(nodePtr->ptr1);
 }
 
 /* 3. decl -> varDecl | funDecl */
 static void declaration(TreeNode* nodePtr) {
-    if (nodePtr->kind == decl1)
+    if (nodePtr->kind == declVar)
 	varDeclaration(nodePtr->ptr1);
-    else //if (nodePtr->kind == decl2)
+    else //if (nodePtr->kind == declFun)
 	funDeclaration(nodePtr->ptr1);
 }
 
@@ -128,17 +128,17 @@ static void funDeclaration(TreeNode* nodePtr) {
 
 /* 7. params -> paramList | VOID */
 static void params(TreeNode* nodePtr) {
-    if (nodePtr->kind == params1)
+    if (nodePtr->kind == paramsNormal)
 	paramList(nodePtr->ptr1);                  // Output paramList code
-    //else if (nodePtr->kind == params2) // No code to generate
+    //else if (nodePtr->kind == paramsVoid) // No code to generate
 }
 
 /* 8. paramList -> param ',' paramList | param */
 static void paramList(TreeNode* nodePtr) {
-    if(nodePtr->kind == paramList1) {
+    if(nodePtr->kind == paramListNormal) {
 	param(nodePtr->ptr1);                      // Output param code
 	paramList(nodePtr->ptr2);                  // Output paramList code
-    } else //if (nodePtr->kind == paramList2) {
+    } else //if (nodePtr->kind == paramListSingle) {
 	param(nodePtr->ptr1);                      // Ouput code for param
 }
 

@@ -16,9 +16,9 @@
 typedef enum {intvar, intarr, refarr, func} types_t;
 
 // Kinds of parse tree nodes. One for each production (P1 : P2)
-typedef enum {prog1, declList1, declList2, decl1, decl2, varDecl1, varDecl2,
-      typeSpecInt, typeSpecFloat, typeSpecVoid, funDecl1, params1, params2, paramList1,
-      paramList2, paramSingle, paramArray, compStmt1, localDecl1, localDecl2,
+typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varDeclSingle, varDeclArray,
+      typeSpecInt, typeSpecFloat, typeSpecVoid, funDecl1, paramsNormal, paramsVoid, paramListNormal,
+      paramListSingle, paramSingle, paramArray, compStmt1, localDecl1, localDecl2,
       stmtList1, stmtList2, funStmt1,
       stmt1, stmt2, stmt3, stmt4, stmt5, expStmt1, expStmt2, selStmt1,
       selStmt2, iterStmt1, retStmt1, retStmt2, exp1, exp2, var1, var2,
@@ -87,7 +87,7 @@ typedef struct snode {
 
 // Parse Tree node.
 typedef struct pnode {
-    nodekind_t      kind;          // From the enum above (e.g. prog1)
+    nodekind_t      kind;          // From the enum above (e.g. progNormal)
 
     union {
       int           integer;     // If it holds a number, its value

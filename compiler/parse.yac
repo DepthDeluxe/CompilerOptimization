@@ -26,7 +26,7 @@
 prog : declList
 {
   parseTreePtr = newParseTreeNode();  /* Make a new tree node for it. */
-  parseTreePtr->kind = prog1;         /* Set its kind from the enum types. */
+  parseTreePtr->kind = progNormal;         /* Set its kind from the enum types. */
   parseTreePtr->ptr1 = $1;            /* Point to the component nodes. */
 }
 ;
@@ -35,14 +35,14 @@ prog : declList
 declList : decl declList
 {
   $$ = newParseTreeNode();
-  $$->kind = declList1;
+  $$->kind = declListNormal;
   $$->ptr1 = $1;
   $$->ptr2 = $2;
 }
 | decl
 {
   $$ = newParseTreeNode();
-  $$->kind = declList2;
+  $$->kind = declListSingle;
   $$->ptr1 = $1;
 }
 ;
@@ -51,13 +51,13 @@ declList : decl declList
 decl : varDecl
 {
   $$ = newParseTreeNode();
-  $$->kind = decl1;
+  $$->kind = declVar;
   $$->ptr1 = $1;
 }
 | funDecl
 {
   $$ = newParseTreeNode();
-  $$->kind = decl2;
+  $$->kind = declFun;
   $$->ptr1 = $1;
 }
 ;
@@ -66,13 +66,13 @@ decl : varDecl
 varDecl : typeSpec ID ';'
 {
   $$ = $2;
-  $$->kind = varDecl1;
+  $$->kind = varDeclSingle;
   $$->ptr1 = $1;
 }
 | typeSpec ID '[' NUM ']' ';'
 {
   $$ = $2;
-  $$->kind = varDecl2;
+  $$->kind = varDeclArray;
   $$->ptr1 = $1;
   $$->array_len = $4->value.integer;
   free($4);
@@ -112,13 +112,13 @@ funDecl : typeSpec ID '(' params ')' funStmt
 params : paramList
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = params1;          /* Set the kind. */
+  $$->kind = paramsNormal;          /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 | VOID
 {
    $$ = newParseTreeNode();    /* Set the node. */
-   $$->kind = params2;         /* Set the kind. */
+   $$->kind = paramsVoid;         /* Set the kind. */
 }
 ;
 
@@ -126,14 +126,14 @@ params : paramList
 paramList : param ',' paramList
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = paramList1;       /* Set the kind. */
+  $$->kind = paramListNormal;       /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
   $$->ptr2 = $3;
 }
 | param
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = paramList2;       /* Set the kind. */
+  $$->kind = paramListSingle;       /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 ;

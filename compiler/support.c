@@ -8,19 +8,19 @@ void printNodeType(TreeNode* node) {
   char* type;
 
   switch(node->kind) {
-  case prog1:
+  case progNormal:
     type = "prg";
     break;
-  case declList1:
-  case declList2:
+  case declListNormal:
+  case declListSingle:
     type = "dcl";
     break;
-  case decl1:
-  case decl2:
+  case declVar:
+  case declFun:
     type = "dec";
     break;
-  case varDecl1:
-  case varDecl2:
+  case varDeclSingle:
+  case varDeclArray:
     type = "vdc";
     break;
   case typeSpecInt:
@@ -31,12 +31,12 @@ void printNodeType(TreeNode* node) {
   case funDecl1:
     type = "fdc";
     break;
-  case params1:
-  case params2:
+  case paramsNormal:
+  case paramsVoid:
     type = "prs";
     break;
-  case paramList1:
-  case paramList2:
+  case paramListNormal:
+  case paramListSingle:
     type = "prl";
     break;
   case paramSingle:
