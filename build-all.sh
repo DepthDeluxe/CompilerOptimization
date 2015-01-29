@@ -18,6 +18,8 @@ mkdir -p build
 
 test_files=$(ls -1 *.cm)
 for file in $test_files; do
+  echo "Building: $file"
+
   name=$(echo "$file" | cut -d'.' -f 1)
   $CC < "$file" > "build/${name}.tm"
 
@@ -35,6 +37,8 @@ rm -rf raw-output.txt
 for file in $test_files; do
   # get the name of the file
   name=$(echo "$file" | cut -d'.' -f 1)
+
+  echo "Running: $file"
 
   # if there is a text file with the same name, pipe it into the input of the
   # program when we are running
