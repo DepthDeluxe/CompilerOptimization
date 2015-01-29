@@ -23,7 +23,7 @@ typedef enum {prog1, declList1, declList2, decl1, decl2, varDecl1, varDecl2,
       stmt1, stmt2, stmt3, stmt4, stmt5, expStmt1, expStmt2, selStmt1,
       selStmt2, iterStmt1, retStmt1, retStmt2, exp1, exp2, var1, var2,
       simpExp1, simpExp2, relop1, relop2, relop3, relop4, relop5,
-      relop6, addExp1, addExp2, addop1, addop2, term1, term2, mulop1,
+      relop6, addExp1, addExp2, addop, subop, term1, term2, mulop1,
       mulop2, factor1, factor2, factor3, factor4, call1, args1, args2,
       argList1, argList2} nodekind_t;
 

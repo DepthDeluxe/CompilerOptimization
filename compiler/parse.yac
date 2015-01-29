@@ -409,13 +409,13 @@ addExp : addExp addop term
 /* 24. addop -> '+' | '-' */
 addop : '+'
 {
-  $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = addop1;     /* Set the kind. */
+  $$ = newParseTreeNode();    /* Set the node. */
+  $$->kind = addop;           /* Set the kind. */
 }
 | '-'
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = addop2;
+  $$->kind = subop;
 }
 ;
 

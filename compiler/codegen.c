@@ -107,7 +107,7 @@ static void declaration(TreeNode* nodePtr) {
 }
 
 /* 4. varDecl -> typeSpec ID ';' | typeSpec ID '[' NUM ']' ';' */
-/* 5. typeSpec -> INT | VOID */
+/* 5. typeSpec -> INT | FLOAT | VOID */
 static void varDeclaration(TreeNode* nodePtr) {
     // Variable declaration - No code to generate
 }
@@ -368,17 +368,21 @@ static void simpleExp(TreeNode* nodePtr) {
 /* 24. addop -> '+' | '-' */
 static void additiveExp(TreeNode* nodePtr) {
     if (nodePtr->kind == addExp1) {
-	additiveExp(nodePtr->ptr1);        // Output addExp code (ans in ac0)
-	push(ac0,"");                      // Save answer
-	term(nodePtr->ptr3);               // Output term code (ans in ac0)
-	// 2nd operand now in ac0, no need to push/pop
-	pop(ac1,"");                       // Get 1st operand
-	if(nodePtr->ptr2->kind == addop1)
-	    emitRO("ADD",ac0,ac1,ac0,""); // ac0 = addExp + term
-	else
-	    emitRO("SUB",ac0,ac1,ac0,""); // ac0 = addExp - term
+      additiveExp(nodePtr->ptr1);        // Output addExp code (ans in ac0)
+      push(ac0,"");                      // Save answer
+      term(nodePtr->ptr3);               // Output term code (ans in ac0)
+      // 2nd operand now in ac0, no need to push/pop
+      pop(ac1,"");                       // Get 1st operand
+
+      // generate ADD operation or SUB operation depending
+      // on the kind
+      if(nodePtr->ptr2->kind == addop)
+        emitRO("ADD",ac0,ac1,ac0,""); // ac0 = addExp + term
+      else
+        emitRO("SUB",ac0,ac1,ac0,""); // ac0 = addExp - term
+
     } else //if (nodePtr->kind == addExp2)
-	term(nodePtr->ptr1);               // Output code for term
+      term(nodePtr->ptr1);               // Output code for term
 }
 
 /* 25. term -> term mulop factor | factor */

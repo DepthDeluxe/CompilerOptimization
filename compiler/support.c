@@ -103,9 +103,11 @@ void printNodeType(TreeNode* node) {
   case addExp2:
     type = "axp";
     break;
-  case addop1:
-  case addop2:
+  case addop:
     type = "aop";
+    break;
+  case subop:
+    type = "sop";
     break;
   case term1:
   case term2:
