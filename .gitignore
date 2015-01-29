@@ -4,6 +4,7 @@
 cm
 lex.yy.c
 y.tab.c
+tags
 
 build/
 
