@@ -4,7 +4,7 @@
 #include "compiler.h"
 %}
 
-%token ID NUM INT VOID IF ELSE WHILE RET LE LT GT GE EQ NE
+%token ID NUM INT FLOAT FNUM VOID IF ELSE WHILE RET LE LT GT GE EQ NE
 
 %%
 /* This yacc file parses C- tokens and produces a tree.
@@ -74,21 +74,26 @@ varDecl : typeSpec ID ';'
   $$ = $2;
   $$->kind = varDecl2;
   $$->ptr1 = $1;
-  $$->numval = $4->numval;
+  $$->array_len = $4->value.integer;
   free($4);
 }
 ;
 
-/* 5. typeSpec -> INT | VOID */
+/* 5. typeSpec -> INT | FLOAT | VOID */
 typeSpec : INT
 {
   $$ = newParseTreeNode();
-  $$->kind = typeSpec1;
+  $$->kind = typeSpecInt;
+}
+| FLOAT
+{
+  $$ = newParseTreeNode();
+  $$->kind = typeSpecFloat;
 }
 | VOID
 {
   $$ = newParseTreeNode();
-  $$->kind = typeSpec2;
+  $$->kind = typeSpecVoid;
 }
 ;
 
@@ -137,13 +142,13 @@ paramList : param ',' paramList
 param : typeSpec ID
 {
   $$ = $2;                     /* Set the node. */
-  $$->kind = param1;           /* Set the kind. */
+  $$->kind = paramSingle;           /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 | typeSpec ID '[' ']'
 {
   $$ = $2;                     /* Set the node. */
-  $$->kind = param2;           /* Set the kind. */
+  $$->kind = paramArray;           /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 ;
@@ -576,6 +581,9 @@ yyerror(char *s) {
   case INT:
     fprintf(stderr,"\"int\".\n");
     break;
+  case FLOAT:
+    fprintf(stderr,"\"float\".\n");
+    break;
   case VOID:
     fprintf(stderr,"\"void\".\n");
     break;
@@ -592,10 +600,13 @@ yyerror(char *s) {
     fprintf(stderr,"\"return\".\n");
     break;
   case ID:
-    fprintf(stderr,"\"%s\".\n",yylval->strval);
+    fprintf(stderr,"\"%s\".\n",yylval->value.string);
     break;
   case NUM:
-    fprintf(stderr,"\"%d\".\n",yylval->numval);
+    fprintf(stderr,"\"%d\".\n",yylval->value.integer);
+    break;
+  case FNUM:
+    fprintf(stderr,"\"%f\".\n",yylval->value.floating);
     break;
   }
   exit(1);

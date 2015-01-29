@@ -97,62 +97,63 @@ static void declaration(TreeNode* nodePtr) {
 }
 
 /* 4. varDecl -> typeSpec ID ';' | typeSpec ID '[' NUM ']' ';' */
-/* 5. typeSpec -> INT | VOID */
+/* 5. typeSpec -> INT | FLOAT | VOID */
 static void varDeclaration(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
     // For variables...
     if (nodePtr->kind == varDecl1) {
-    _test(nodePtr->ptr1,"vardecl->typespec");
+      // check to see if string is not NULL
+      _test(nodePtr->ptr1,"vardecl->typespec");
 
-    // Make sure it's not void
-    if (nodePtr->ptr1->kind == typeSpec2) {
-        fprintf(stderr, "Static semantic error!  Line %d, ",
-            nodePtr->line);
-        fprintf(stderr, "variable \"%s\" declared void.\n",
-            nodePtr->strval);
-        exit(1);
-    }
+      // Make sure it's not void
+      if (nodePtr->ptr1->kind == typeSpecVoid) {
+          fprintf(stderr, "Static semantic error!  Line %d, ",
+              nodePtr->line);
+          fprintf(stderr, "variable \"%s\" declared void.\n",
+              nodePtr->value.string);
+          exit(1);
+      }
 
-    // Make a semantic record for it
-    semRecPtr = newSemRec();
-    semRecPtr->v.kind = intvar;
-    semRecPtr->v.base = symTabPtr->base;
-    semRecPtr->v.offset = -symTabPtr->used;
-    symTabPtr->used++;  // 1 more space has been used
-    insert(nodePtr->line, symTabPtr, nodePtr->strval,semRecPtr);
-    locals++;
+      // Make a semantic record for it
+      semRecPtr = newSemRec();
+      semRecPtr->v.kind = intvar;
+      semRecPtr->v.base = symTabPtr->base;
+      semRecPtr->v.offset = -symTabPtr->used;
+      symTabPtr->used++;  // 1 more space has been used
+      insert(nodePtr->line, symTabPtr, nodePtr->value.string,semRecPtr);
+      locals++;
     }
     // For array variables
     else { //if (nodePtr->kind == varDecl2)
-    _test(nodePtr->ptr1,"vardecl->typespec");
+      _test(nodePtr->ptr1,"vardecl->typespec");
 
-    // Make sure it's not void
-    if (nodePtr->ptr1->kind == typeSpec2) { // VOID ID [NUM] is illegal
-        fprintf(stderr, "Static semantic error!  Line %d, ",
-            nodePtr->line);
-        fprintf(stderr, "array \"%s\" declared void.\n",
-            nodePtr->strval);
-        exit(1);
-    }
+      // Make sure it's not void
+      if (nodePtr->ptr1->kind == typeSpecVoid) { // VOID ID [NUM] is illegal
+          fprintf(stderr, "Static semantic error!  Line %d, ",
+              nodePtr->line);
+          fprintf(stderr, "array \"%s\" declared void.\n",
+              nodePtr->value.string);
+          exit(1);
+      }
 
-        // Make sure it has length > 0
-    if (nodePtr->numval < 1) { // Num must be > 0
-        fprintf(stderr, "Static semantic error!  Line %d, ",
-            nodePtr->line);
-        fprintf(stderr,"array \"%s\" has %d elements.\n",
-            nodePtr->strval, nodePtr->numval);
-        exit(1);
-    }
+          // Make sure it has length > 0
+      if (nodePtr->array_len < 1) { // Num must be > 0
+          fprintf(stderr, "Static semantic error!  Line %d, ",
+              nodePtr->line);
+          fprintf(stderr,"array \"%s\" has %d elements.\n",
+              nodePtr->value.string, nodePtr->array_len);
+          exit(1);
+      }
 
-    // Make a semantic record for it
-    semRecPtr = newSemRec();
-    semRecPtr->v.kind = intarr;
-    semRecPtr->v.base = symTabPtr->base;
-    semRecPtr->v.offset = -symTabPtr->used;
-    symTabPtr->used += nodePtr->numval;
-    insert(nodePtr->line, symTabPtr, nodePtr->strval,semRecPtr);
-    locals += nodePtr->numval;
+      // Make a semantic record for it
+      semRecPtr = newSemRec();
+      semRecPtr->v.kind = intarr;
+      semRecPtr->v.base = symTabPtr->base;
+      semRecPtr->v.offset = -symTabPtr->used;
+      symTabPtr->used += nodePtr->array_len;
+      insert(nodePtr->line, symTabPtr, nodePtr->value.string,semRecPtr);
+      locals += nodePtr->array_len;
     }
 }
 
@@ -164,7 +165,7 @@ static void funDeclaration(TreeNode* nodePtr) {
      semRecPtr->f.kind = func;
      semRecPtr->f.numParams = -1;            // Dummy value
      semRecPtr->f.localSpace = -1;           // Dummy value
-     insert(nodePtr->line, symTabPtr, nodePtr->strval,semRecPtr);
+     insert(nodePtr->line, symTabPtr, nodePtr->value.string,semRecPtr);
 
      beginScope();                           // Push scope onto sym tab
      symTabPtr->base = fp;                   // Base = FP
@@ -203,14 +204,14 @@ static void paramList(TreeNode* nodePtr) {
 static void param(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
-    if (nodePtr->kind == param1) {
+    if (nodePtr->kind == paramSingle) {
 
     // Make sure its not type void. 'void ID' is not legal.
-    if (nodePtr->ptr1->kind == typeSpec2) {
+    if (nodePtr->ptr1->kind == typeSpecVoid) {
         fprintf(stderr, "Static semantic error!  Line %d, ",
             nodePtr->line);
         fprintf(stderr, "variable parameter \"%s\" declared void.\n",
-            nodePtr->strval);
+            nodePtr->value.string);
         exit(1);
     }
 
@@ -220,16 +221,16 @@ static void param(TreeNode* nodePtr) {
     semRecPtr->v.base = symTabPtr->base;
     semRecPtr->v.offset = -symTabPtr->used;
     symTabPtr->used++;
-    insert(nodePtr->line, symTabPtr,nodePtr->strval,semRecPtr);
+    insert(nodePtr->line, symTabPtr,nodePtr->value.string,semRecPtr);
     theNumParams++;
     }
-    else { //if (nodePtr->kind == param2)
+    else { //if (nodePtr->kind ==paramArray)
 
     // Make sure its not type void. 'void ID []' is not legal.
-    if (nodePtr->ptr1->kind == typeSpec2) {
+    if (nodePtr->ptr1->kind == typeSpecVoid) {
         fprintf(stderr, "Semantic error!  Line %d, ", nodePtr->line);
         fprintf(stderr, "variable parameter \"%s\" declared void.\n",
-            nodePtr->strval);
+            nodePtr->value.string);
         exit(1);
     }
 
@@ -239,7 +240,7 @@ static void param(TreeNode* nodePtr) {
     semRecPtr->v.base = symTabPtr->base;    // set base loc
     semRecPtr->v.offset = -symTabPtr->used; // set offset loc
     symTabPtr->used++;                      // update spc used
-    insert(nodePtr->line, symTabPtr, nodePtr->strval,semRecPtr);
+    insert(nodePtr->line, symTabPtr, nodePtr->value.string,semRecPtr);
     theNumParams++;                         // inc num of params
     }
 }
@@ -333,7 +334,7 @@ static void var(TreeNode* nodePtr, int rlval) {
 
     // For variables...
     if (nodePtr->kind == var1) {
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->strval);
+    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
     if (rlval == 0) { // we want the lvalue
 
         // Make sure we don't take the l-value of something not an int.
@@ -341,7 +342,7 @@ static void var(TreeNode* nodePtr, int rlval) {
         fprintf(stderr, "Static semantic error!  Line %d, ",
             nodePtr->line);
         fprintf(stderr, "identifier \"%s\" not a legal l-value.\n",
-            nodePtr->strval);
+            nodePtr->value.string);
         exit(1);
         }
     }
@@ -352,7 +353,7 @@ static void var(TreeNode* nodePtr, int rlval) {
         fprintf(stderr, "Static semantic error!  Line %d, ",
             nodePtr->line);
         fprintf(stderr, "identifier \"%s\" not a legal r-value.\n",
-            nodePtr->strval);
+            nodePtr->value.string);
         exit(1);
         }
     }
@@ -361,7 +362,7 @@ static void var(TreeNode* nodePtr, int rlval) {
     } else if (nodePtr->kind == var2) {
     expression(nodePtr->ptr1);          // Check exp code
 
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->strval);
+    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
 
     if (rlval == 0){ // we want the lvalue
 
@@ -370,7 +371,7 @@ static void var(TreeNode* nodePtr, int rlval) {
         fprintf(stderr, "Static semantic error!  Line %d, ",
             nodePtr->line);
         fprintf(stderr, "identifier \"%s\" not a legal l-value.\n",
-            nodePtr->strval);
+            nodePtr->value.string);
         exit(1);
         }
 
@@ -381,7 +382,7 @@ static void var(TreeNode* nodePtr, int rlval) {
         fprintf(stderr, "Static semantic error!  Line %d, ",
             nodePtr->line);
         fprintf(stderr, "identifier \"%s\" not a legal r-value.\n",
-            nodePtr->strval);
+            nodePtr->value.string);
         exit(1);
         }
     }
@@ -441,7 +442,7 @@ static void factor(TreeNode* nodePtr) {
 static void call(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->strval);
+    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
 
     args(nodePtr->ptr1);                      // Check args code
 

@@ -13,22 +13,22 @@
 #define M 11
 
 // Types: int, array of int, array of ptr to int, function
-enum {intvar, intarr, refarr, func}; 
+typedef enum {intvar, intarr, refarr, func} types_t;
 
 // Kinds of parse tree nodes. One for each production (P1 : P2)
-enum {prog1, declList1, declList2, decl1, decl2, varDecl1, varDecl2,
-      typeSpec1, typeSpec2, funDecl1, params1, params2, paramList1,
-      paramList2, param1, param2, compStmt1, localDecl1, localDecl2,
+typedef enum {prog1, declList1, declList2, decl1, decl2, varDecl1, varDecl2,
+      typeSpecInt, typeSpecFloat, typeSpecVoid, funDecl1, params1, params2, paramList1,
+      paramList2, paramSingle, paramArray, compStmt1, localDecl1, localDecl2,
       stmtList1, stmtList2, funStmt1,
       stmt1, stmt2, stmt3, stmt4, stmt5, expStmt1, expStmt2, selStmt1,
       selStmt2, iterStmt1, retStmt1, retStmt2, exp1, exp2, var1, var2,
       simpExp1, simpExp2, relop1, relop2, relop3, relop4, relop5,
       relop6, addExp1, addExp2, addop1, addop2, term1, term2, mulop1,
       mulop2, factor1, factor2, factor3, factor4, call1, args1, args2,
-      argList1, argList2};
+      argList1, argList2} nodekind_t;
 
 /* *** structures for Semantic Checking ***********************************
- * type 'SemRec' (Semantic Record) contains the type and memory 
+ * type 'SemRec' (Semantic Record) contains the type and memory
  *        location of a variable or function.
  *
  * type 'HashNode' is a hash table node. Contains a pointer to a semRec.
@@ -38,12 +38,12 @@ enum {prog1, declList1, declList2, decl1, decl2, varDecl1, varDecl2,
  *
  * type 'Scope' points to the HashTable for all the variables and functions
  *        in a given scope
- * 
- * type 'SymbolTable' is a pointer to a Scope. The pointer to the current 
+ *
+ * type 'SymbolTable' is a pointer to a Scope. The pointer to the current
  *        scope has this type.
  *
- * type 'TreeNode' is a parse tree node. It contains the name of the 
- *        grammar rule that made it and a number or identifier name if it 
+ * type 'TreeNode' is a parse tree node. It contains the name of the
+ *        grammar rule that made it and a number or identifier name if it
  *        was NUM or ID. It also has pointer to any child parse tree nodes.
  * ************************************************************************/
 
@@ -56,12 +56,12 @@ enum {prog1, declList1, declList2, decl1, decl2, varDecl1, varDecl2,
  */
 typedef union {
     struct {
-	int kind;            // Variable type (types that aren't func)
+	types_t kind;     // Variable type (types that aren't func)
 	int base;            // Memory location (usually fp - offset)
 	int offset;
     } v;
     struct {
-	int kind;            // Function type (always func)
+	types_t kind;            // Function type (always func)
 	int addr;            // Memory location where the code is stored
 	int numParams;       // Number of parameters
 	int localSpace;      // Space for local variables
@@ -76,7 +76,7 @@ typedef struct hnode {
     struct hnode* nextNode;
 } HashNode,* HashTable;
 
-// Symbol Table node. Points to a hash table of all the semantic 
+// Symbol Table node. Points to a hash table of all the semantic
 // records in its scope.
 typedef struct snode {
     int           base;       // Frame Pointer
@@ -87,9 +87,15 @@ typedef struct snode {
 
 // Parse Tree node.
 typedef struct pnode {
-    int           kind;          // From the enum above (e.g. prog1)
-    int           numval;        // If it holds a number, its value
-    char        * strval;        // If it holds an id, its name
+    nodekind_t      kind;          // From the enum above (e.g. prog1)
+
+    union {
+      int           integer;     // If it holds a number, its value
+      float         floating;    // If it holds a float, its value
+      char        * string;      // If it holds an id, its name
+    } value;
+    int             array_len;   // if it's an array, then here is its length
+
     struct pnode* ptr1;          // Pointers to any child nodes
     struct pnode* ptr2;
     struct pnode* ptr3;
@@ -105,7 +111,7 @@ extern int           lineno;
 
 // Semantic checking support functions
 extern SemRec*    lookup(int line, SymbolTable scopePtr, char* theName);
-extern void       insert(int line, SymbolTable scopePtr, char* theName, 
+extern void       insert(int line, SymbolTable scopePtr, char* theName,
 			 SemRec* theRec);
 extern void       beginScope();
 extern void       endScope();

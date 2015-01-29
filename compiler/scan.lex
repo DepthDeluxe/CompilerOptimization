@@ -13,12 +13,14 @@ int lineno = 1;
 #define STATE4 4
 %}
 
-/* token ID NUM INT VOID IF ELSE WHILE RET LE LT GT GE EQ NE */
+/* token ID NUM INT FLOAT FNUM VOID IF ELSE WHILE RET LE LT GT GE EQ NE */
 
 letter     [a-zA-Z]
 digit      [0-9]
 identifier {letter}+
+fnumber    {digit}+\.{digit}*|{digit}*\.{digit}+
 number     {digit}+
+
 whitespace [ \t\r]+
 newline    \n
 
@@ -31,12 +33,16 @@ newline    \n
 "return"     {return RET;}
 
 {identifier} {yylval = newParseTreeNode();
-              yylval->strval = (char *) myalloc(strlen(yytext)+1);
-              strcpy(yylval->strval,yytext);
+              yylval->value.string = (char *) myalloc(strlen(yytext)+1);
+              strcpy(yylval->value.string,yytext);
               return ID;}
 
+{fnumber}    {yylval = newParseTreeNode();
+              yylval->value.floating = atof(yytext);
+              return FNUM;}
+
 {number}     {yylval = newParseTreeNode();
-              yylval->numval = atoi(yytext);
+              yylval->value.integer = atoi(yytext);
               return NUM;}
 
 "<="         {return LE;}

@@ -23,8 +23,9 @@ void printNodeType(TreeNode* node) {
   case varDecl2:
     type = "vdc";
     break;
-  case typeSpec1:
-  case typeSpec2:
+  case typeSpecInt:
+  case typeSpecFloat:
+  case typeSpecVoid:
     type = "tsp";
     break;
   case funDecl1:
@@ -38,8 +39,8 @@ void printNodeType(TreeNode* node) {
   case paramList2:
     type = "prl";
     break;
-  case param1:
-  case param2:
+  case paramSingle:
+  case paramArray:
     type = "prm";
     break;
   case compStmt1:

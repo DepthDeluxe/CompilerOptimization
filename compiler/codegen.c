@@ -46,9 +46,9 @@ void generateCode(TreeNode* nodePtr) {
 static void program(TreeNode* nodePtr) {
     SemRec* semRecPtr;
     int loc, main1, main2;
-    
+
     symTabPtr = nodePtr->symTabPtr;       // Get global symbol table
-    
+
     // Run-time environment setup instructions
     emitRM("LD",gp,0,ac0,"Set GP");                // GP = dMem[0] = size-1
     loc = emitSkip(2);                             // Init FP,SP here later
@@ -58,25 +58,25 @@ static void program(TreeNode* nodePtr) {
     emitRM("LDA",ac0,1,pc,"Get PC for Halt");      // ac0 has PC for HALT line
     main2 = emitSkip(1);                           // Init PC here
     emitRO("HALT",0,0,0,"Halt");                   // Stop.
-    
+
     semRecPtr = lookup(nodePtr->line, symTabPtr, "input");
     semRecPtr->f.addr = emitSkip(0);
     emitRM("ST",ac0,-1,fp,"Input Function, store return addr");
     emitRO("IN",ac0,0,0,  "     Get input");
     emitRM("LD",pc,-1,fp, "     Return (end of function)");
-    
+
     semRecPtr = lookup(nodePtr->line, symTabPtr, "output");
     semRecPtr->f.addr = emitSkip(0);
     emitRM("ST",ac0,-1,fp,"Output Function, store return addr");
     emitRM("LD",ac0,-2,fp,"     Get output");
     emitRO("OUT",ac0,0,0, "     Give output");
     emitRM("LD",pc,-1,fp, "     Return (end of function)");
-    
+
     declarationList(nodePtr->ptr1);                  // Code for declList
-    
+
     emitBackup(loc);
-    emitRM("LDA",fp,-symTabPtr->used,gp,"Set FP below globals"); 
-    emitRM("LDA",sp,-symTabPtr->used,gp,"Set SP below globals"); 
+    emitRM("LDA",fp,-symTabPtr->used,gp,"Set FP below globals");
+    emitRM("LDA",sp,-symTabPtr->used,gp,"Set SP below globals");
     emitRestore();
     semRecPtr = lookup(nodePtr->line, symTabPtr, "main");
     emitBackup(main2);
@@ -85,7 +85,7 @@ static void program(TreeNode* nodePtr) {
     emitBackup(main1);
     emitRM("LDA",sp,-(semRecPtr->f.localSpace+1),sp,"Set SP below locals");
     emitRestore();
-    endScope();    
+    endScope();
 }
 
 /* 2. declList -> decl declList | decl */
@@ -116,7 +116,7 @@ static void varDeclaration(TreeNode* nodePtr) {
 static void funDeclaration(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->strval);
+    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
     semRecPtr->f.addr = emitSkip(0);           // Func code starts here
     symTabPtr = nodePtr->symTabPtr;                  // Get current symbol table
     params(nodePtr->ptr2);                     // Output params code
@@ -158,7 +158,7 @@ static void localDeclaration(TreeNode* nodePtr) {
     if (nodePtr->kind == localDecl1) {
 	varDeclaration(nodePtr->ptr1);         // Output code for varDecl
 	localDeclaration(nodePtr->ptr2);       // Output code for localDecl
-    } 
+    }
 }
 
 /* 12. stmtList -> stmt stmtList | empty */
@@ -166,7 +166,7 @@ static void statementList(TreeNode* nodePtr) {
     if (nodePtr->kind == stmtList1) {
 	statement(nodePtr->ptr1);              // Output code for stmt
 	statementList(nodePtr->ptr2);          // Output code for stmtList
-    } 
+    }
 }
 
 /* 13. stmt -> expStmt | compStmt | selStmt | retStmt */
@@ -192,8 +192,8 @@ static void expressionStmt(TreeNode* nodePtr) {
 /* 15. compStmt -> '{' localDecl stmtList '}' */
 static void compoundStmt(TreeNode* nodePtr) {
     symTabPtr = nodePtr->symTabPtr;           // Get current symbol table
-    localDeclaration(nodePtr->ptr1);    // Output code for localDecl  
-    statementList(nodePtr->ptr2);       // Output code for stmtList    
+    localDeclaration(nodePtr->ptr1);    // Output code for localDecl
+    statementList(nodePtr->ptr2);       // Output code for stmtList
     endScope();                         // Pop scope
 }
 
@@ -205,34 +205,34 @@ static void selectionStmt(TreeNode* nodePtr) {
 	expression(nodePtr->ptr1);     // Output exp code
 	loc = emitSkip(1);             // Save space for "if" test
 	statement(nodePtr->ptr2);      // Output stmt code
-	
+
 	loc2 = emitSkip(0);            // Get jump destination (end)
 	emitBackup(loc);               // Backup numbering to "if" test
 	emitRMAbs("JEQ",ac0,loc2,
-		  "  if test: Jump to end if false (exp == 0)");  
+		  "  if test: Jump to end if false (exp == 0)");
 	emitRestore();                 // Restore numbering
     } else { //if (nodePtr->kind == selStmt2)
-	
+
 	expression(nodePtr->ptr1);        // Output exp code
 	loc = emitSkip(1);                // Skip jump1 loc
 	statement(nodePtr->ptr2);         // Output stmt1 code
-	
+
 	emitRM("LDC",ac0,0,0,
 	       "  if: Put a 0 in ac0 so we jump over the else part");
 	loc2 = emitSkip(1);               // Skip jump2 loc
 	loc3 = emitSkip(0);               // Get jump1 destination (else)
 	statement(nodePtr->ptr3);         // Output stmt2 code
 	loc4 = emitSkip(0);               // Get jump2 destination (end)
-	
+
 	emitBackup(loc);                  // Go back to jump1 loc
 	emitRMAbs("JEQ",ac0,loc3,
 		  "  if: Jump to else part if test is false (exp == 0)");
 	emitRestore();                    // Restore instr counter to else
-	
+
 	emitBackup(loc2);                 // Go back to jump2 loc
 	emitRMAbs("JEQ",ac0,loc4,"  if: Jump to the end");     // Jump to end
 	emitRestore();                    // Restore instr counter to end
-    } 
+    }
 }
 
 /* 18. retStmt -> return ';' | return exp ';' */
@@ -262,48 +262,50 @@ static void var(TreeNode* nodePtr, int rlval) {
     SemRec* semRecPtr;
     int loc, loc2;
     if (nodePtr->kind == var1) {
-	semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->strval);
+	semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
 	if (rlval == 0)  // we want the lvalue, ac1 = var addr
 	    emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,
 		   "  variable: AC1 = address of variable");
 	else                               // we want the rvalue
 	    switch(semRecPtr->v.kind) {
 	    case intvar:                   // ac0 = var value
-		emitRM("LD",ac0,semRecPtr->v.offset,semRecPtr->v.base,
-		       "  variable: AC0 = value of variable");
-		break;
+        emitRM("LD",ac0,semRecPtr->v.offset,semRecPtr->v.base,
+               "  variable: AC0 = value of variable");
+        break;
 	    case intarr:                   // ac0 = array addr
-		emitRM("LDA",ac0,semRecPtr->v.offset,semRecPtr->v.base,
-		       "  variable: AC0 = address of array");
-		break;
+        emitRM("LDA",ac0,semRecPtr->v.offset,semRecPtr->v.base,
+               "  variable: AC0 = address of array");
+        break;
 	    case refarr:                   // ac0 = array addr
-		emitRM("LD",ac0,semRecPtr->v.offset,semRecPtr->v.base,
-		       "  variable: AC0 = address of array");
-		break;
+        emitRM("LD",ac0,semRecPtr->v.offset,semRecPtr->v.base,
+               "  variable: AC0 = address of array");
+        break;
+      default:
+        break;
 	    }
     } else { //if (nodePtr->kind == var2)
-	
+
 	expression(nodePtr->ptr1);          // Output exp code
-	
+
 	loc = emitSkip(1);                  // Jump if subscript legal
 	emitRO("HALT",0,0,0,"  variable: Stop. Neg subscripts illegal.");        // Stop. Neg subscripts illegal.
 	loc2 = emitSkip(0);
 	emitBackup(loc);
 	emitRMAbs("JGE",ac0,loc2,"  variable: Jump if subscript >= 0");       // Jump if subscript >= 0
 	emitRestore();                      // Restore instr counter
-	
-	semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->strval);
-	
-	if (rlval == 0) { // we want the lvalue, Get arr[exp] addr. 
+
+	semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+
+	if (rlval == 0) { // we want the lvalue, Get arr[exp] addr.
 	    if (semRecPtr->v.kind == intarr) {  // For intarr
-		emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
-		emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
+        emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
+        emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
 	    }
 	    else {                              // For refarr
-		emitRM("LD",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
-		emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
+        emitRM("LD",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
+        emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
 	    }
-	    
+
 	} else { // we want the rvalue, Get arr[exp] value
 	    if (semRecPtr->v.kind == intarr) {       // For intarr
 		emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
@@ -316,9 +318,9 @@ static void var(TreeNode* nodePtr, int rlval) {
 		emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
 		emitRM("LD",ac0,0,ac1,"");      // (ac0 = arr[exp] val)
 	    }
-	    
+
 	}
-    } 
+    }
 }
 
 /* 21. simpExp -> addExp relop addExp | addExp */
@@ -330,16 +332,16 @@ static void simpleExp(TreeNode* nodePtr) {
 	push(ac0,"");                 // Save 1st operand
 	additiveExp(nodePtr->ptr3);   // Output code for addExp2 (ans in ac0)
 	pop(ac1,"");                  // Get 1st operand
-	
+
 	emitRO("SUB",ac0,ac1,ac0,""); // ac0 = addExp1 - addExp2
 	loc = emitSkip(1);            // Relop: jump to T or continue to F
 	emitRM("LDC",ac0,0,0,"");     // ac0 = FALSE
-	emitRM("LDC",ac1,0,0,"");       
+	emitRM("LDC",ac1,0,0,"");
 	loc2 = emitSkip(1);           // Jump to end
-	loc3 = emitSkip(0);           // True location             
+	loc3 = emitSkip(0);           // True location
 	emitRM("LDC",ac0,1,0,"");     // ac0 = TRUE
 	loc4 = emitSkip(0);           // End location
-	
+
 	emitBackup(loc);              // Fill in relop jump instr
 	if (nodePtr->ptr2->kind == relop1)
 	    emitRMAbs("JLE",ac0,loc3,""); // LE
@@ -354,7 +356,7 @@ static void simpleExp(TreeNode* nodePtr) {
 	else //if (nodePtr->ptr2->kind == relop6)
 	    emitRMAbs("JNE",ac0,loc3,""); // NE
 	emitRestore();
-	
+
 	emitBackup(loc2);             // Fill in jump to end instr
 	emitRMAbs("JEQ",ac1,loc4,""); // Jump to end
 	emitRestore();
@@ -405,28 +407,28 @@ static void factor(TreeNode* nodePtr) {
     else if (nodePtr->kind == factor3)
 	call(nodePtr->ptr1);                 // Output call code (ans in ac0)
     else //if (nodePtr->kind == factor4)
-	emitRM("LDC",ac0,nodePtr->numval,0,""); // ac0 = NUM value
+	emitRM("LDC",ac0,nodePtr->value.integer,0,""); // ac0 = NUM value
 }
 
 /* 28. call -> ID '(' args ')' */
 static void call(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->strval);
+    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
     push(fp,              "     Function call, save old FP");
     emitRM("LDA",sp,-1,sp,"     Save space for return addr");
-    
+
     args(nodePtr->ptr1);                     // Output args code
-    
+
     emitRM("LDA",fp,semRecPtr->f.numParams+2,sp,"     Set FP to top of frame");
     emitRM("LDA",sp,-nodePtr->locals_so_far,sp, "     Set SP after locals");
-    
+
     emitRM("LDA",ac0,1,pc,"     Get return addr");  // ac0 = return addr (pc+1)
-    emitRMAbs("LDA",pc,semRecPtr->f.addr,"     Jump to function"); 
+    emitRMAbs("LDA",pc,semRecPtr->f.addr,"     Jump to function");
     emitRM("LDA",sp,0,fp,                "     Restore old SP");
     emitRM("LD",fp,0,fp,                 "     Restore old FP");
 }
-     
+
 /* 29. args -> argList | empty */
 static void args(TreeNode* nodePtr) {
     if (nodePtr->kind == args1)
@@ -437,13 +439,13 @@ static void args(TreeNode* nodePtr) {
 /* 30. argList -> exp ',' argList | exp */
 static void argList(TreeNode* nodePtr) {
     if (nodePtr->kind == argList1) {
-	expression(nodePtr->ptr1);           // Output exp code 
+	expression(nodePtr->ptr1);           // Output exp code
 	push(ac0,"");
 	argList(nodePtr->ptr2);              // Output arglist code
     } else { //if (nodePtr->kind == argList2)
 	expression(nodePtr->ptr1);           // Output exp code
 	push(ac0,"");
-    } 
+    }
 }
 
 
