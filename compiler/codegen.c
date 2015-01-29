@@ -172,21 +172,21 @@ static void statementList(TreeNode* nodePtr) {
 /* 13. stmt -> expStmt | compStmt | selStmt | retStmt */
 /* 13a. e_stmt -> expStmt | compStmt | e_selStmt | retStmt */
 static void statement(TreeNode* nodePtr) {
-    if (nodePtr->kind == stmt1)
+    if (nodePtr->kind == stmtExp)
 	expressionStmt(nodePtr->ptr1);   // Output code for expStmt
-    else if (nodePtr->kind == stmt2)
+    else if (nodePtr->kind == stmtComp)
 	compoundStmt(nodePtr->ptr1);     // Output code for compStmt
-    else if (nodePtr->kind == stmt3)
+    else if (nodePtr->kind == stmtSel)
 	selectionStmt(nodePtr->ptr1);    // Output code for selStmt
-    else //if (nodePtr->kind == stmt5)
+    else //if (nodePtr->kind == stmtRet)
 	returnStmt(nodePtr->ptr1);       // Output code for retStmt
 }
 
 /* 14. expStmt -> exp ';' | ';' */
 static void expressionStmt(TreeNode* nodePtr) {
-    if (nodePtr->kind == expStmt1)
+    if (nodePtr->kind == expStmtNormal)
 	expression(nodePtr->ptr1);        // Output code for exp
-    //else if (nodePtr->kind == expStmt2) // No code to generate
+    //else if (nodePtr->kind == expStmtVoid) // No code to generate
 }
 
 /* 15. compStmt -> '{' localDecl stmtList '}' */
@@ -215,13 +215,13 @@ static void selectionStmt(TreeNode* nodePtr) {
 
 	expression(nodePtr->ptr1);        // Output exp code
 	loc = emitSkip(1);                // Skip jump1 loc
-	statement(nodePtr->ptr2);         // Output stmt1 code
+	statement(nodePtr->ptr2);         // Output stmtExp code
 
 	emitRM("LDC",ac0,0,0,
 	       "  if: Put a 0 in ac0 so we jump over the else part");
 	loc2 = emitSkip(1);               // Skip jump2 loc
 	loc3 = emitSkip(0);               // Get jump1 destination (else)
-	statement(nodePtr->ptr3);         // Output stmt2 code
+	statement(nodePtr->ptr3);         // Output stmtComp code
 	loc4 = emitSkip(0);               // Get jump2 destination (end)
 
 	emitBackup(loc);                  // Go back to jump1 loc

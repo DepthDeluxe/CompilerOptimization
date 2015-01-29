@@ -20,7 +20,7 @@ typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varD
       typeSpecInt, typeSpecFloat, typeSpecVoid, funDecl1, paramsNormal, paramsVoid, paramListNormal,
       paramListSingle, paramSingle, paramArray, compStmt1, localDeclNormal, localDeclVoid,
       stmtListNormal, stmtListVoid, funStmt1,
-      stmt1, stmt2, stmt3, stmt4, stmt5, expStmt1, expStmt2, selStmt1,
+      stmtExp, stmtComp, stmtSel, stmt4, stmtRet, expStmtNormal, expStmtVoid, selStmt1,
       selStmt2, iterStmt1, retStmt1, retStmt2, exp1, exp2, var1, var2,
       simpExp1, simpExp2, relop1, relop2, relop3, relop4, relop5,
       relop6, addExp1, addExp2, addop, subop, term1, term2, mulop1,

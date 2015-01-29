@@ -197,25 +197,25 @@ stmtList : stmt stmtList
 stmt : expStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = stmt1;            /* Set the kind. */
+  $$->kind = stmtExp;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 | compStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = stmt2;            /* Set the kind. */
+  $$->kind = stmtComp;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 | selStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = stmt3;            /* Set the kind. */
+  $$->kind = stmtSel;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 | retStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = stmt5;            /* Set the kind. */
+  $$->kind = stmtRet;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 ;
@@ -224,25 +224,25 @@ stmt : expStmt
 e_stmt : expStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = stmt1;            /* Set the kind. */
+  $$->kind = stmtExp;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 | compStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = stmt2;            /* Set the kind. */
+  $$->kind = stmtComp;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 | e_selStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = stmt3;            /* Set the kind. */
+  $$->kind = stmtSel;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 | retStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = stmt5;            /* Set the kind. */
+  $$->kind = stmtRet;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 ;
@@ -251,13 +251,13 @@ e_stmt : expStmt
 expStmt : exp ';'
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = expStmt1;         /* Set the kind. */
+  $$->kind = expStmtNormal;         /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 | ';'
 {
   $$ = newParseTreeNode(); /* Set the node. */
-  $$->kind = expStmt2; /* Set the kind. */
+  $$->kind = expStmtVoid; /* Set the kind. */
   /* Set the pointers. */
 }
 ;

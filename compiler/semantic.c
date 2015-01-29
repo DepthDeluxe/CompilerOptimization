@@ -270,21 +270,21 @@ static void statementList(TreeNode* nodePtr) {
 /* 13. stmt -> expStmt | compStmt | selStmt | retStmt */
 /* 13a. e_stmt -> expStmt | compStmt | e_selStmt | retStmt */
 static void statement(TreeNode* nodePtr) {
-    if (nodePtr->kind == stmt1)
+    if (nodePtr->kind == stmtExp)
     expressionStmt(nodePtr->ptr1);        // Check expStmt code
-    else if (nodePtr->kind == stmt2)
+    else if (nodePtr->kind == stmtComp)
     compoundStmt(nodePtr->ptr1);          // Check compStmt code
-    else if (nodePtr->kind == stmt3)
+    else if (nodePtr->kind == stmtSel)
     selectionStmt(nodePtr->ptr1);         // Check selStmt code
-    else //if (nodePtr->kind == stmt5)
+    else //if (nodePtr->kind == stmtRet)
     returnStmt(nodePtr->ptr1);            // Check retStmt code
 }
 
 /* 14. expStmt -> exp ';' | ';' */
 static void expressionStmt(TreeNode* nodePtr) {
-    if (nodePtr->kind == expStmt1)
+    if (nodePtr->kind == expStmtNormal)
     expression(nodePtr->ptr1);            // Check code for exp
-    //else if (nodePtr->kind == expStmt2)     // No checks needed.
+    //else if (nodePtr->kind == expStmtVoid)     // No checks needed.
 }
 
 /* 15. compStmt -> '{' localDecl stmtList '}' */
@@ -307,8 +307,8 @@ static void selectionStmt(TreeNode* nodePtr) {
     statement(nodePtr->ptr2);             // Check stmt code
     } else { //if (nodePtr->kind == selStmt2)
     expression(nodePtr->ptr1);            // Check exp code
-    statement(nodePtr->ptr2);             // Check stmt1 code
-    statement(nodePtr->ptr3);             // Check stmt2 code
+    statement(nodePtr->ptr2);             // Check stmtExp code
+    statement(nodePtr->ptr3);             // Check stmtComp code
     }
 }
 

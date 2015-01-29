@@ -57,15 +57,15 @@ void printNodeType(TreeNode* node) {
   case funStmt1:
     type = "fns";
     break;
-  case stmt1:
-  case stmt2:
-  case stmt3:
+  case stmtExp:
+  case stmtComp:
+  case stmtSel:
   case stmt4:
-  case stmt5:
+  case stmtRet:
     type = "stm";
     break;
-  case expStmt1:
-  case expStmt2:
+  case expStmtNormal:
+  case expStmtVoid:
     type = "xst";
     break;
   case selStmt1:
