@@ -7,6 +7,9 @@ CFLAGS = -std=c99 -Wall `pkg-config --cflags --libs glib-2.0`
 # main build command
 all: ctags cm
 
+debug: CFLAGS += -g
+debug: ctags cm
+
 lex.yy.c: scan.lex compiler.h
 	flex scan.lex
 
