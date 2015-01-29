@@ -253,18 +253,18 @@ static void functionStmt(TreeNode* nodePtr) {
 
 /* 11. localDecl -> varDecl localDecl | empty */
 static void localDeclaration(TreeNode* nodePtr) {
-    if (nodePtr->kind == localDecl1) {
+    if (nodePtr->kind == localDeclNormal) {
     varDeclaration(nodePtr->ptr1);        // Check  varDecl code
     localDeclaration(nodePtr->ptr2);      // Check localDecl code
-    } //else if (nodePtr->kind == localDecl2) // No checks needed.
+    } //else if (nodePtr->kind == localDeclVoid) // No checks needed.
 }
 
 /* 12. stmtList -> stmt stmtList | empty */
 static void statementList(TreeNode* nodePtr) {
-    if (nodePtr->kind == stmtList1) {
+    if (nodePtr->kind == stmtListNormal) {
     statement(nodePtr->ptr1);             // Check stmt code
     statementList(nodePtr->ptr2);         // Check stmtList code
-    } //else if (nodePtr->kind == stmtList2)  // No checks needed.
+    } //else if (nodePtr->kind == stmtListVoid)  // No checks needed.
 }
 
 /* 13. stmt -> expStmt | compStmt | selStmt | retStmt */

@@ -167,14 +167,14 @@ funStmt : '{' localDecl stmtList '}'
 localDecl : varDecl localDecl
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = localDecl1;       /* Set the kind. */
+  $$->kind = localDeclNormal;       /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
   $$->ptr2 = $2;
 }
 |
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = localDecl2;/* Set the kind. */
+  $$->kind = localDeclVoid;/* Set the kind. */
 }
 ;
 
@@ -182,14 +182,14 @@ localDecl : varDecl localDecl
 stmtList : stmt stmtList
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = stmtList1;        /* Set the kind. */
+  $$->kind = stmtListNormal;        /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
   $$->ptr2 = $2;
 }
 |
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = stmtList2;        /* Set the kind. */
+  $$->kind = stmtListVoid;        /* Set the kind. */
 }
 ;
 

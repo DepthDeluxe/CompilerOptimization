@@ -46,12 +46,12 @@ void printNodeType(TreeNode* node) {
   case compStmt1:
     type = "cst";
     break;
-  case localDecl1:
-  case localDecl2:
+  case localDeclNormal:
+  case localDeclVoid:
     type = "ldc";
     break;
-  case stmtList1:
-  case stmtList2:
+  case stmtListNormal:
+  case stmtListVoid:
     type = "stl";
     break;
   case funStmt1:

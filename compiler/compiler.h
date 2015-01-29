@@ -18,8 +18,8 @@ typedef enum {intvar, intarr, refarr, func} types_t;
 // Kinds of parse tree nodes. One for each production (P1 : P2)
 typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varDeclSingle, varDeclArray,
       typeSpecInt, typeSpecFloat, typeSpecVoid, funDecl1, paramsNormal, paramsVoid, paramListNormal,
-      paramListSingle, paramSingle, paramArray, compStmt1, localDecl1, localDecl2,
-      stmtList1, stmtList2, funStmt1,
+      paramListSingle, paramSingle, paramArray, compStmt1, localDeclNormal, localDeclVoid,
+      stmtListNormal, stmtListVoid, funStmt1,
       stmt1, stmt2, stmt3, stmt4, stmt5, expStmt1, expStmt2, selStmt1,
       selStmt2, iterStmt1, retStmt1, retStmt2, exp1, exp2, var1, var2,
       simpExp1, simpExp2, relop1, relop2, relop3, relop4, relop5,

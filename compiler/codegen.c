@@ -155,7 +155,7 @@ static void functionStmt(TreeNode* nodePtr) {
 
 /* 11. localDecl -> varDecl localDecl | empty */
 static void localDeclaration(TreeNode* nodePtr) {
-    if (nodePtr->kind == localDecl1) {
+    if (nodePtr->kind == localDeclNormal) {
 	varDeclaration(nodePtr->ptr1);         // Output code for varDecl
 	localDeclaration(nodePtr->ptr2);       // Output code for localDecl
     }
@@ -163,7 +163,7 @@ static void localDeclaration(TreeNode* nodePtr) {
 
 /* 12. stmtList -> stmt stmtList | empty */
 static void statementList(TreeNode* nodePtr) {
-    if (nodePtr->kind == stmtList1) {
+    if (nodePtr->kind == stmtListNormal) {
 	statement(nodePtr->ptr1);              // Output code for stmt
 	statementList(nodePtr->ptr2);          // Output code for stmtList
     }
