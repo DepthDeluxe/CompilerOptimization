@@ -13,7 +13,7 @@ int lineno = 1;
 #define STATE4 4
 %}
 
-/* token ID NUM INT VOID IF ELSE RET LE LT GT GE EQ NE */
+/* token ID NUM INT VOID IF ELSE WHILE RET LE LT GT GE EQ NE */
 
 letter     [a-zA-Z]
 digit      [0-9]
@@ -27,6 +27,7 @@ newline    \n
 "void"       {return VOID;}
 "if"         {return IF;}
 "else"       {return ELSE;}
+"while"      {return WHILE;}
 "return"     {return RET;}
 
 {identifier} {yylval = newParseTreeNode();

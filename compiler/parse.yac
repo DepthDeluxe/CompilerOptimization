@@ -4,15 +4,15 @@
 #include "compiler.h"
 %}
 
-%token ID NUM INT VOID IF ELSE RET LE LT GT GE EQ NE
+%token ID NUM INT VOID IF ELSE WHILE RET LE LT GT GE EQ NE
 
 %%
 /* This yacc file parses C- tokens and produces a tree.
  * The tree is closer to a parse tree than a syntax tree
  * for ease of use in the semantic checking and code
- * generation phases. 
+ * generation phases.
 
- * tree node attributes are: 
+ * tree node attributes are:
  *    Kind              kind;    // which tree node kind it is
  *    int              numval;   // value if its a number
  *    char *           strval;   // name if its an id
@@ -358,27 +358,27 @@ simpExp : addExp relop addExp
 ;
 
 /* 22. relop -> '<' '=' | '<' | '>' | '>' '=' | '=' '=' | '!' '=' */
-relop : LE 
+relop : LE
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = relop1; }      /* Set the kind. */  
-| LT  
+  $$->kind = relop1; }      /* Set the kind. */
+| LT
 {
   $$ = newParseTreeNode();     /* Set the node. */
   $$->kind = relop2; }
-| GT  
+| GT
 {
   $$ = newParseTreeNode();     /* Set the node. */
   $$->kind = relop3; }
-| GE  
+| GE
 {
   $$ = newParseTreeNode();     /* Set the node. */
   $$->kind = relop4; }
-| EQ  
+| EQ
 {
   $$ = newParseTreeNode();     /* Set the node. */
   $$->kind = relop5; }
-| NE  
+| NE
 {
   $$ = newParseTreeNode();     /* Set the node. */
   $$->kind = relop6; }
@@ -393,7 +393,7 @@ addExp : addExp addop term
   $$->ptr2 = $2;
   $$->ptr3 = $3;
 }
-| term 
+| term
 {
   $$ = newParseTreeNode();     /* Set the node. */
   $$->kind = addExp2;          /* Set the kind. */
@@ -402,15 +402,15 @@ addExp : addExp addop term
 ;
 
 /* 24. addop -> '+' | '-' */
-addop : '+' 
-{ 
+addop : '+'
+{
   $$ = newParseTreeNode();     /* Set the node. */
   $$->kind = addop1;     /* Set the kind. */
 }
-| '-'  
+| '-'
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = addop2; 
+  $$->kind = addop2;
 }
 ;
 
@@ -432,15 +432,15 @@ term : term mulop factor
 ;
 
 /* 26. mulop -> '*' | '/' */
-mulop : '*' 
-{ 
+mulop : '*'
+{
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = mulop1;           /* Set the kind. */ 
+  $$->kind = mulop1;           /* Set the kind. */
 }
-| '/'  
-{ 
+| '/'
+{
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = mulop2; 
+  $$->kind = mulop2;
 }
 ;
 
@@ -516,13 +516,13 @@ argList : exp ',' argList
 yyerror(char *s) {
   fprintf(stderr,"Syntactic error!  Line %d, unexpected token ",lineno);
   switch (yychar) {
-  case ';':  
+  case ';':
     fprintf(stderr,"\";\".\n");
     break;
-  case '[':  
+  case '[':
     fprintf(stderr,"\"[\".\n");
     break;
-  case ']':  
+  case ']':
     fprintf(stderr,"\"]\".\n");
     break;
   case '(':
@@ -584,6 +584,9 @@ yyerror(char *s) {
     break;
   case ELSE:
     fprintf(stderr,"\"else\".\n");
+    break;
+  case WHILE:
+    fprintf(stderr,"\"while\".\n");
     break;
   case RET:
     fprintf(stderr,"\"return\".\n");
