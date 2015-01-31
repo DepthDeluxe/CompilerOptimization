@@ -137,7 +137,7 @@ static void varDeclaration(TreeNode* nodePtr) {
           exit(1);
       }
 
-          // Make sure it has length > 0
+      // Make sure it has length > 0
       if (nodePtr->array_len < 1) { // Num must be > 0
           fprintf(stderr, "Static semantic error!  Line %d, ",
               nodePtr->line);
@@ -420,10 +420,10 @@ static void additiveExp(TreeNode* nodePtr) {
 /* 25. term -> term mulop factor | factor */
 /* 26. mulop -> '*' | '/' */
 static void term(TreeNode* nodePtr) {
-    if (nodePtr->kind == term1) {
+    if (nodePtr->kind == termNormal) {
     term(nodePtr->ptr1);                  // Check term code
     factor(nodePtr->ptr3);                // Check factor code
-    } else //if (nodePtr->kind == term2)
+    } else //if (nodePtr->kind == termFactor)
     factor(nodePtr->ptr1);                // Check factor code
 }
 
