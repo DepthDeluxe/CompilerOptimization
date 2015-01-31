@@ -79,12 +79,12 @@ void printNodeType(TreeNode* node) {
   case retStmtExp:
     type = "rst";
     break;
-  case expAssign:
-  case expSimple:
+  case exp1:
+  case exp2:
     type = "exp";
     break;
-  case varSingle:
-  case varArray:
+  case var1:
+  case var2:
     type = "var";
     break;
   case simpExp1:
@@ -117,21 +117,21 @@ void printNodeType(TreeNode* node) {
   case mulop2:
     type = "mop";
     break;
-  case factor1:
-  case factor2:
-  case factor3:
-  case factor4:
+  case factorExp:
+  case factorVar:
+  case factorCall:
+  case factorNum:
     type = "fct";
     break;
   case call1:
     type = "cal";
     break;
-  case args1:
-  case args2:
+  case argsNormal:
+  case argsVoid:
     type = "ags";
     break;
-  case argList1:
-  case argList2:
+  case argListNormal:
+  case argListSingle:
     type = "agl";
     break;
   }

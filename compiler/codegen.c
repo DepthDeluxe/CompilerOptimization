@@ -247,13 +247,13 @@ static void returnStmt(TreeNode* nodePtr) {
 
 /* 19. exp -> var '=' exp | simpExp */
 static void expression(TreeNode* nodePtr) {
-    if (nodePtr->kind == expAssign) {
+    if (nodePtr->kind == exp1) {
 	expression(nodePtr->ptr2);         // Output exp code (ans in ac0)
 	push(ac0,"  assignment: save value");
 	var(nodePtr->ptr1, 0);             // Output var code (addr in ac1)
 	pop(ac0,"  assignment: retrieve value");
 	emitRM("ST",ac0,0,ac1,"  assignment: variable = dMem[ac1] = value");
-    } else //if (nodePtr->kind == expSimple) {
+    } else //if (nodePtr->kind == exp2) {
 	simpleExp(nodePtr->ptr1);
 }
 
@@ -261,7 +261,7 @@ static void expression(TreeNode* nodePtr) {
 static void var(TreeNode* nodePtr, int rlval) {
     SemRec* semRecPtr;
     int loc, loc2;
-    if (nodePtr->kind == varSingle) {
+    if (nodePtr->kind == var1) {
 	semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
 	if (rlval == 0)  // we want the lvalue, ac1 = var addr
 	    emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,
@@ -283,7 +283,7 @@ static void var(TreeNode* nodePtr, int rlval) {
       default:
         break;
 	    }
-    } else { //if (nodePtr->kind == varArray)
+    } else { //if (nodePtr->kind == var2)
 
 	expression(nodePtr->ptr1);          // Output exp code
 
@@ -394,7 +394,7 @@ static void term(TreeNode* nodePtr) {
 	factor(nodePtr->ptr3);               // Output factor code (ans in ac0)
 	// 2nd operand now in ac0, no need to push/pop
 	pop(ac1,"");                         // Get 1st operand
-	if(nodePtr->ptr2->kind == mulop1)
+	if(nodePtr->ptr2->kind == mulopMult)
 	    emitRO("MUL",ac0,ac1,ac0,"");    // ac0 = term * factor
 	else
 	    emitRO("DIV",ac0,ac1,ac0,"");    // ac0 = term / factor
@@ -404,13 +404,13 @@ static void term(TreeNode* nodePtr) {
 
 /* 27. factor -> '(' exp ')' | var | call | NUM */
 static void factor(TreeNode* nodePtr) {
-    if (nodePtr->kind == factor1)
+    if (nodePtr->kind == factorExp)
 	expression(nodePtr->ptr1);           // Output exp code (ans in ac0)
-    else if (nodePtr->kind == factor2)
+    else if (nodePtr->kind == factorVar)
 	var(nodePtr->ptr1,1);                // Output var code (rvalue in ac0)
-    else if (nodePtr->kind == factor3)
+    else if (nodePtr->kind == factorCall)
 	call(nodePtr->ptr1);                 // Output call code (ans in ac0)
-    else //if (nodePtr->kind == factor4)
+    else //if (nodePtr->kind == factorNum)
 	emitRM("LDC",ac0,nodePtr->value.integer,0,""); // ac0 = NUM value
 }
 
@@ -435,18 +435,18 @@ static void call(TreeNode* nodePtr) {
 
 /* 29. args -> argList | empty */
 static void args(TreeNode* nodePtr) {
-    if (nodePtr->kind == args1)
+    if (nodePtr->kind == argsNormal)
 	argList(nodePtr->ptr1);              // Output argList code
-    //else if (nodePtr->kind == args2)       // No code to generate
+    //else if (nodePtr->kind == argsVoid)       // No code to generate
 }
 
 /* 30. argList -> exp ',' argList | exp */
 static void argList(TreeNode* nodePtr) {
-    if (nodePtr->kind == argList1) {
+    if (nodePtr->kind == argListNormal) {
 	expression(nodePtr->ptr1);           // Output exp code
 	push(ac0,"");
 	argList(nodePtr->ptr2);              // Output arglist code
-    } else { //if (nodePtr->kind == argList2)
+    } else { //if (nodePtr->kind == argListSingle)
 	expression(nodePtr->ptr1);           // Output exp code
 	push(ac0,"");
     }

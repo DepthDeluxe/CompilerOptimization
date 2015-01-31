@@ -21,11 +21,11 @@ typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varD
       paramListSingle, paramSingle, paramArray, compStmt1, localDeclNormal, localDeclVoid,
       stmtListNormal, stmtListVoid, funStmt1,
       stmtExp, stmtComp, stmtSel, stmt4, stmtRet, expStmtNormal, expStmtVoid, selStmtIf,
-      selStmtIfElse, iterStmt1, retStmtVoid, retStmtExp, expAssign, expSimple, varSingle, varArray,
+      selStmtIfElse, iterStmt1, retStmtVoid, retStmtExp, exp1, exp2, var1, var2,
       simpExp1, simpExp2, relop1, relop2, relop3, relop4, relop5,
-      relop6, addExp1, addExp2, addop, subop, term1, term2, mulop1,
-      mulop2, factor1, factor2, factor3, factor4, call1, args1, args2,
-      argList1, argList2} nodekind_t;
+      relop6, addExp1, addExp2, addop, subop, term1, term2, mulopMult,
+      mulopDiv, factorExp, factorVar, factorCall, factorNum, call1, argsNormal, argsVoid,
+      argListNormal, argListSingle} nodekind_t;
 
 /* *** structures for Semantic Checking ***********************************
  * type 'SemRec' (Semantic Record) contains the type and memory

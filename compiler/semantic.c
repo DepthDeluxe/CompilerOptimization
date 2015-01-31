@@ -321,10 +321,10 @@ static void returnStmt(TreeNode* nodePtr) {
 
 /* 19. exp -> var '=' exp | simpExp */
 static void expression(TreeNode* nodePtr) {
-    if (nodePtr->kind == expAssign) {
+    if (nodePtr->kind == exp1) {
     expression(nodePtr->ptr2);            // Check exp code
     var(nodePtr->ptr1, 0);                // Check var code
-    } else //if (nodePtr->kind == expSimple)
+    } else //if (nodePtr->kind == exp2)
     simpleExp(nodePtr->ptr1);             // Check simpleExp code
 }
 
@@ -333,7 +333,7 @@ static void var(TreeNode* nodePtr, int rlval) {
     SemRec* semRecPtr;
 
     // For variables...
-    if (nodePtr->kind == varSingle) {
+    if (nodePtr->kind == var1) {
     semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
     if (rlval == 0) { // we want the lvalue
 
@@ -359,7 +359,7 @@ static void var(TreeNode* nodePtr, int rlval) {
     }
 
     // For array variables...
-    } else if (nodePtr->kind == varArray) {
+    } else if (nodePtr->kind == var2) {
     expression(nodePtr->ptr1);          // Check exp code
 
     semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
@@ -429,13 +429,13 @@ static void term(TreeNode* nodePtr) {
 
 /* 27. factor -> '(' exp ')' | var | call | NUM */
 static void factor(TreeNode* nodePtr) {
-    if (nodePtr->kind == factor1)
+    if (nodePtr->kind == factorExp)
     expression(nodePtr->ptr1);            // Check exp code
-    else if (nodePtr->kind == factor2)
+    else if (nodePtr->kind == factorVar)
     var(nodePtr->ptr1,1);                 // Check var code
-    else if (nodePtr->kind == factor3)
+    else if (nodePtr->kind == factorCall)
     call(nodePtr->ptr1);                  // Check call code
-    else ; //if (nodePtr->kind == factor4)    // No checks needed.
+    else ; //if (nodePtr->kind == factorNum)    // No checks needed.
 }
 
 /* 28. call -> ID '(' args ')' */
@@ -454,17 +454,17 @@ static void call(TreeNode* nodePtr) {
 
 /* 29. args -> argList | empty */
 static void args(TreeNode* nodePtr) {
-    if (nodePtr->kind == args1)
+    if (nodePtr->kind == argsNormal)
     argList(nodePtr->ptr1);               // Check argList code
-    //else if (nodePtr->kind == args2)        // No checks needed.
+    //else if (nodePtr->kind == argsVoid)        // No checks needed.
 }
 
 /* 30. argList -> exp ',' argList | exp */
 static void argList(TreeNode* nodePtr) {
-    if (nodePtr->kind == argList1) {
+    if (nodePtr->kind == argListNormal) {
     expression(nodePtr->ptr1);            // Check exp code
     argList(nodePtr->ptr2);               // Check arglist code
-    } else //if (nodePtr->kind == argList2)
+    } else //if (nodePtr->kind == argListSingle)
     expression(nodePtr->ptr1);            // Check exp code
 }
 
