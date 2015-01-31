@@ -101,7 +101,8 @@ static void declaration(TreeNode* nodePtr) {
 static void varDeclaration(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
-    // For variables...
+    // First case handles variables and
+    // second case handles arrays
     if (nodePtr->kind == varDeclSingle) {
       // check to see if string is not NULL
       _test(nodePtr->ptr1,"vardecl->typespec");
@@ -115,16 +116,24 @@ static void varDeclaration(TreeNode* nodePtr) {
           exit(1);
       }
 
-      // Make a semantic record for it
+      // Make a semantic record for it, different for floats and ints
       semRecPtr = newSemRec();
-      semRecPtr->v.kind = intvar;
+
+      // set the appropriate kind
+      if ( nodePtr->ptr1->kind == typeSpecInt ) {
+        semRecPtr->v.kind = intvar;
+      } else if ( nodePtr->ptr1->kind == typeSpecFloat ) {
+        semRecPtr->v.kind = floatvar;
+      }
+
       semRecPtr->v.base = symTabPtr->base;
       semRecPtr->v.offset = -symTabPtr->used;
       symTabPtr->used++;  // 1 more space has been used
-      insert(nodePtr->line, symTabPtr, nodePtr->value.string,semRecPtr);
+      insert(nodePtr->line, symTabPtr, nodePtr->value.string, semRecPtr);
+
+      // increment the locals counter
       locals++;
     }
-    // For array variables
     else { //if (nodePtr->kind == varDeclArray)
       _test(nodePtr->ptr1,"vardecl->typespec");
 
@@ -148,11 +157,17 @@ static void varDeclaration(TreeNode* nodePtr) {
 
       // Make a semantic record for it
       semRecPtr = newSemRec();
+
+      // set the proper type depending on the typeSpec
       semRecPtr->v.kind = intarr;
+
       semRecPtr->v.base = symTabPtr->base;
       semRecPtr->v.offset = -symTabPtr->used;
       symTabPtr->used += nodePtr->array_len;
       insert(nodePtr->line, symTabPtr, nodePtr->value.string,semRecPtr);
+
+      // increment the local variable counter by the
+      // number of items in the array
       locals += nodePtr->array_len;
     }
 }
@@ -217,7 +232,11 @@ static void param(TreeNode* nodePtr) {
 
     // Make a semantic record for the parameter (local variable).
     semRecPtr = newSemRec();
-    semRecPtr->v.kind = intvar;
+    if ( nodePtr->ptr1->kind == typeSpecInt ) {
+      semRecPtr->v.kind = intvar;
+    } else if ( nodePtr->ptr1->kind == typeSpecFloat ) {
+      semRecPtr->v.kind = floatvar;
+    }
     semRecPtr->v.base = symTabPtr->base;
     semRecPtr->v.offset = -symTabPtr->used;
     symTabPtr->used++;
@@ -334,58 +353,71 @@ static void var(TreeNode* nodePtr, int rlval) {
 
     // For variables...
     if (nodePtr->kind == varSingle) {
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
-    if (rlval == 0) { // we want the lvalue
+      semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
 
-        // Make sure we don't take the l-value of something not an int.
-        if (semRecPtr->v.kind != intvar) {
-        fprintf(stderr, "Static semantic error!  Line %d, ",
-            nodePtr->line);
-        fprintf(stderr, "identifier \"%s\" not a legal l-value.\n",
-            nodePtr->value.string);
-        exit(1);
-        }
-    }
-    else {// we want the rvalue
+      // rlval == 0 checks the lvalue case
+      // rlval == 1 checks the rvalue case
+      if (rlval == 0) {
 
-        // Make sure we don't take the r-value of a function
-        if (semRecPtr->v.kind == func) {
-        fprintf(stderr, "Static semantic error!  Line %d, ",
-            nodePtr->line);
-        fprintf(stderr, "identifier \"%s\" not a legal r-value.\n",
-            nodePtr->value.string);
-        exit(1);
-        }
-    }
+          // Make sure we don't take the l-value of something not an int or float.
+          int is_not_single = !(semRecPtr->v.kind == intvar || semRecPtr->v.kind == floatvar);
+          if (is_not_single) {
+            fprintf(stderr, "Static semantic error!  Line %d, ",
+                nodePtr->line);
+            fprintf(stderr, "identifier \"%s\" not a legal l-value.\n",
+                nodePtr->value.string);
+            exit(1);
+          }
+      }
+      else {// we want the rvalue
+          // Make sure we don't take the r-value of a function
+          if (semRecPtr->v.kind == func) {
+            fprintf(stderr, "Static semantic error!  Line %d, ",
+                nodePtr->line);
+            fprintf(stderr, "identifier \"%s\" not a legal r-value.\n",
+                nodePtr->value.string);
+            exit(1);
+          }
+      }
 
     // For array variables...
     } else if (nodePtr->kind == varArray) {
-    expression(nodePtr->ptr1);          // Check exp code
+      expression(nodePtr->ptr1);          // Check exp code
 
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+      semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
 
-    if (rlval == 0){ // we want the lvalue
+      // rlval == 0 checks the lvalue case
+      // rlval == 1 checks the rvalue case
+      if (rlval == 0){
 
-        // Make sure we only take the l-value of an array.
-        if (semRecPtr->v.kind != intarr && semRecPtr->v.kind != refarr) {
-        fprintf(stderr, "Static semantic error!  Line %d, ",
-            nodePtr->line);
-        fprintf(stderr, "identifier \"%s\" not a legal l-value.\n",
-            nodePtr->value.string);
-        exit(1);
-        }
+          // Make sure we only take the l-value of an array.
+          int not_array =
+            semRecPtr->v.kind != intarr &&
+            semRecPtr->v.kind != refarr;
 
-    } else { // we want the rvalue
+          if (not_array) {
+            fprintf(stderr, "Static semantic error!  Line %d, ",
+                nodePtr->line);
+            fprintf(stderr, "identifier \"%s\" not a legal l-value.\n",
+                nodePtr->value.string);
+            exit(1);
+          }
 
-        // Make sure we only take the r-value of an array.
-        if (semRecPtr->v.kind != intarr && semRecPtr->v.kind != refarr) {
-        fprintf(stderr, "Static semantic error!  Line %d, ",
-            nodePtr->line);
-        fprintf(stderr, "identifier \"%s\" not a legal r-value.\n",
-            nodePtr->value.string);
-        exit(1);
-        }
-    }
+      } else { // we want the rvalue
+
+          // Make sure we only take the r-value of an array.
+          int not_array =
+            semRecPtr->v.kind != intarr &&
+            semRecPtr->v.kind != refarr;
+
+          if (not_array) {
+            fprintf(stderr, "Static semantic error!  Line %d, ",
+                nodePtr->line);
+            fprintf(stderr, "identifier \"%s\" not a legal r-value.\n",
+                nodePtr->value.string);
+            exit(1);
+          }
+      }
     }
 }
 

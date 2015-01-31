@@ -259,68 +259,73 @@ static void expression(TreeNode* nodePtr) {
 
 /* 20. var -> ID | ID '[' exp ']' */
 static void var(TreeNode* nodePtr, int rlval) {
-    SemRec* semRecPtr;
-    int loc, loc2;
-    if (nodePtr->kind == varSingle) {
-	semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
-	if (rlval == 0)  // we want the lvalue, ac1 = var addr
-	    emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,
-		   "  variable: AC1 = address of variable");
-	else                               // we want the rvalue
-	    switch(semRecPtr->v.kind) {
-	    case intvar:                   // ac0 = var value
+  SemRec* semRecPtr;
+  int loc, loc2;
+  if (nodePtr->kind == varSingle) {
+    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+
+    if (rlval == 0) { // we want the lvalue, ac1 = var addr
+      emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,
+       "  variable: AC1 = address of variable");
+    }
+    else {                              // we want the rvalue
+      switch(semRecPtr->v.kind) {
+      case intvar:                   // ac0 = var value
         emitRM("LD",ac0,semRecPtr->v.offset,semRecPtr->v.base,
                "  variable: AC0 = value of variable");
         break;
-	    case intarr:                   // ac0 = array addr
+      case floatvar:                   // ac0 = var value
+        emitRM("LDF",ac0,semRecPtr->v.offset,semRecPtr->v.base,
+               "  variable: AC0 = value of variable");
+        break;
+      case intarr:                   // ac0 = array addr
         emitRM("LDA",ac0,semRecPtr->v.offset,semRecPtr->v.base,
                "  variable: AC0 = address of array");
         break;
-	    case refarr:                   // ac0 = array addr
+      case refarr:                   // ac0 = array addr
         emitRM("LD",ac0,semRecPtr->v.offset,semRecPtr->v.base,
                "  variable: AC0 = address of array");
         break;
       default:
         break;
-	    }
-    } else { //if (nodePtr->kind == varArray)
+      }
+    }
+  } else { //if (nodePtr->kind == varArray)
 
-	expression(nodePtr->ptr1);          // Output exp code
+    expression(nodePtr->ptr1);          // Output exp code
 
-	loc = emitSkip(1);                  // Jump if subscript legal
-	emitRO("HALT",0,0,0,"  variable: Stop. Neg subscripts illegal.");        // Stop. Neg subscripts illegal.
-	loc2 = emitSkip(0);
-	emitBackup(loc);
-	emitRMAbs("JGE",ac0,loc2,"  variable: Jump if subscript >= 0");       // Jump if subscript >= 0
-	emitRestore();                      // Restore instr counter
+    loc = emitSkip(1);                  // Jump if subscript legal
+    emitRO("HALT",0,0,0,"  variable: Stop. Neg subscripts illegal.");        // Stop. Neg subscripts illegal.
+    loc2 = emitSkip(0);
+    emitBackup(loc);
+    emitRMAbs("JGE",ac0,loc2,"  variable: Jump if subscript >= 0");       // Jump if subscript >= 0
+    emitRestore();                      // Restore instr counter
 
-	semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
 
-	if (rlval == 0) { // we want the lvalue, Get arr[exp] addr.
-	    if (semRecPtr->v.kind == intarr) {  // For intarr
+    if (rlval == 0) { // we want the lvalue, Get arr[exp] addr.
+      if (semRecPtr->v.kind == intarr) {  // For intarr
         emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
         emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
-	    }
-	    else {                              // For refarr
+      }
+      else {                              // For refarr
         emitRM("LD",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
         emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
-	    }
-
-	} else { // we want the rvalue, Get arr[exp] value
-	    if (semRecPtr->v.kind == intarr) {       // For intarr
-		emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
-		// Get arr addr
-		emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
-		emitRM("LD",ac0,0,ac1,"");      // (ac0 = arr[exp] val)
-	    }
-	    else {                                   // For refarr
-		emitRM("LD",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
-		emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
-		emitRM("LD",ac0,0,ac1,"");      // (ac0 = arr[exp] val)
-	    }
-
-	}
+      }
+    } else { // we want the rvalue, Get arr[exp] value
+      if (semRecPtr->v.kind == intarr) {       // For intarr
+        emitRM("LDA",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
+        // Get arr addr
+        emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
+        emitRM("LD",ac0,0,ac1,"");      // (ac0 = arr[exp] val)
+      }
+      else {                                   // For refarr
+        emitRM("LD",ac1,semRecPtr->v.offset,semRecPtr->v.base,"");
+        emitRO("SUB",ac1,ac1,ac0,"");   // (ac1 = arr[exp] addr)
+        emitRM("LD",ac0,0,ac1,"");      // (ac0 = arr[exp] val)
+      }
     }
+  }
 }
 
 /* 21. simpExp -> addExp relop addExp | addExp */

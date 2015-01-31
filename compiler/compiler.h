@@ -13,7 +13,7 @@
 #define M 11
 
 // Types: int, array of int, array of ptr to int, function
-typedef enum {intvar, intarr, refarr, func} types_t;
+typedef enum {intvar, intarr, floatvar, refarr, func} types_t;
 
 // Kinds of parse tree nodes. One for each production (P1 : P2)
 typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varDeclSingle, varDeclArray,
