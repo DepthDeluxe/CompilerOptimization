@@ -79,12 +79,12 @@ void printNodeType(TreeNode* node) {
   case retStmtExp:
     type = "rst";
     break;
-  case exp1:
-  case exp2:
+  case expAssign:
+  case expSimple:
     type = "exp";
     break;
-  case var1:
-  case var2:
+  case varSingle:
+  case varArray:
     type = "var";
     break;
   case simpExp1:

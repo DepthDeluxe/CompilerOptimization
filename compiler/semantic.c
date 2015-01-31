@@ -321,10 +321,10 @@ static void returnStmt(TreeNode* nodePtr) {
 
 /* 19. exp -> var '=' exp | simpExp */
 static void expression(TreeNode* nodePtr) {
-    if (nodePtr->kind == exp1) {
+    if (nodePtr->kind == expAssign) {
     expression(nodePtr->ptr2);            // Check exp code
     var(nodePtr->ptr1, 0);                // Check var code
-    } else //if (nodePtr->kind == exp2)
+    } else //if (nodePtr->kind == expSimple)
     simpleExp(nodePtr->ptr1);             // Check simpleExp code
 }
 
@@ -333,7 +333,7 @@ static void var(TreeNode* nodePtr, int rlval) {
     SemRec* semRecPtr;
 
     // For variables...
-    if (nodePtr->kind == var1) {
+    if (nodePtr->kind == varSingle) {
     semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
     if (rlval == 0) { // we want the lvalue
 
@@ -359,7 +359,7 @@ static void var(TreeNode* nodePtr, int rlval) {
     }
 
     // For array variables...
-    } else if (nodePtr->kind == var2) {
+    } else if (nodePtr->kind == varArray) {
     expression(nodePtr->ptr1);          // Check exp code
 
     semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
@@ -423,7 +423,7 @@ static void term(TreeNode* nodePtr) {
     if (nodePtr->kind == term1) {
     term(nodePtr->ptr1);                  // Check term code
     factor(nodePtr->ptr3);                // Check factor code
-    } else //if (nodePtr->kind == termFactor)
+    } else //if (nodePtr->kind == term2)
     factor(nodePtr->ptr1);                // Check factor code
 }
 

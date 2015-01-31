@@ -319,14 +319,14 @@ retStmt : RET ';'
 exp : var '=' exp
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = exp1;             /* Set the kind. */
+  $$->kind = expAssign;             /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
   $$->ptr2 = $3;
 }
 | simpExp
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = exp2;             /* Set the kind. */
+  $$->kind = expSimple;             /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 ;
@@ -335,12 +335,12 @@ exp : var '=' exp
 var : ID
 {
   $$ = $1;                     /* Set the node. */
-  $$->kind = var1;             /* Set the kind. */
+  $$->kind = varSingle;             /* Set the kind. */
 }
 | ID '[' exp ']'
 {
   $$ = $1;                     /* Set the node. */
-  $$->kind = var2;             /* Set the kind. */
+  $$->kind = varArray;             /* Set the kind. */
   $$->ptr1 = $3;               /* Set the pointers. */
 }
 ;
