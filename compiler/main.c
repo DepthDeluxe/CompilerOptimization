@@ -7,6 +7,10 @@
 SymbolTable   symTabPtr = NULL;  // Pointer to the top of the symbol table
 ParseTree     parseTreePtr;      // Pointer to the top of the parse tree
 
+// function declarations
+int hashFunct(char* theName);
+void generateCode(TreeNode* nodePt);
+
 /****************************************************************************/
 /*                                                                          */
 /* main()                                                                   */
@@ -61,8 +65,12 @@ void insert(int line, SymbolTable scopePtr, char* theName, SemRec* theRec) {
      int slot = hashFunct(theName);            // Hash the key.
 
      HashNode* box = newHTableNode();              // Make a node for it.
-     box->key = strdup(theName);
-     box->theLine = line;
+
+     // copy the string
+     box->key = calloc(strlen(theName), sizeof(char));
+     strcpy(box->key, theName);
+
+       box->theLine = line;
      box->theSemRec = theRec;
      box->nextNode = NULL;
 

@@ -126,6 +126,9 @@ extern HashNode*  newHTableNode();
 extern HashTable* newHashTable();
 extern Scope*     newScope();
 
+// Semantic checker support functions
+extern void semanticCheck(TreeNode* nodePtr);
+
 // Code Generation support functions
 extern int  emitSkip(int howMany);
 extern void emitBackup(int loc);
