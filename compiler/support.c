@@ -113,8 +113,8 @@ void printNodeType(TreeNode* node) {
   case termFactor:
     type = "trm";
     break;
-  case mulop1:
-  case mulop2:
+  case mulopMult:
+  case mulopDiv:
     type = "mop";
     break;
   case factorExp:
