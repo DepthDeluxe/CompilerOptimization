@@ -1,6 +1,7 @@
 # build the compiler with GCC since this is
 # what the final thing will be built with
 pushd compiler
+make clean
 make gcc
 
 if [ $? -ne 0 ]; then
