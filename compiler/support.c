@@ -96,11 +96,11 @@ void printNodeType(TreeNode* node) {
   case relopGT:
   case relopGE:
   case relopEQ:
-  case relop6:
+  case relopNE:
     type = "rop";
     break;
-  case addExp1:
-  case addExp2:
+  case addExpNormal:
+  case addExpTerm:
     type = "axp";
     break;
   case addop:
@@ -109,8 +109,8 @@ void printNodeType(TreeNode* node) {
   case subop:
     type = "sop";
     break;
-  case term1:
-  case term2:
+  case termNormal:
+  case termFactor:
     type = "trm";
     break;
   case mulop1:

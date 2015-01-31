@@ -328,12 +328,12 @@ static void var(TreeNode* nodePtr, int rlval) {
 static void simpleExp(TreeNode* nodePtr) {
     int loc, loc2, loc3, loc4;
     if (nodePtr->kind == simpExp1) {
-	additiveExp(nodePtr->ptr1);   // Output code for addExp1 (ans in ac0)
+	additiveExp(nodePtr->ptr1);   // Output code for addExpNormal (ans in ac0)
 	push(ac0,"");                 // Save 1st operand
-	additiveExp(nodePtr->ptr3);   // Output code for addExp2 (ans in ac0)
+	additiveExp(nodePtr->ptr3);   // Output code for addExpTerm (ans in ac0)
 	pop(ac1,"");                  // Get 1st operand
 
-	emitRO("SUB",ac0,ac1,ac0,""); // ac0 = addExp1 - addExp2
+	emitRO("SUB",ac0,ac1,ac0,""); // ac0 = addExpNormal - addExpTerm
 	loc = emitSkip(1);            // Relop: jump to T or continue to F
 	emitRM("LDC",ac0,0,0,"");     // ac0 = FALSE
 	emitRM("LDC",ac1,0,0,"");
@@ -353,7 +353,7 @@ static void simpleExp(TreeNode* nodePtr) {
 	    emitRMAbs("JGE",ac0,loc3,""); // GT
 	else if (nodePtr->ptr2->kind == relopEQ)
 	    emitRMAbs("JEQ",ac0,loc3,""); // EQ
-	else //if (nodePtr->ptr2->kind == relop6)
+	else //if (nodePtr->ptr2->kind == relopNE)
 	    emitRMAbs("JNE",ac0,loc3,""); // NE
 	emitRestore();
 
@@ -367,7 +367,7 @@ static void simpleExp(TreeNode* nodePtr) {
 /* 23. addExp -> addExp addop term | term */
 /* 24. addop -> '+' | '-' */
 static void additiveExp(TreeNode* nodePtr) {
-    if (nodePtr->kind == addExp1) {
+    if (nodePtr->kind == addExpNormal) {
       additiveExp(nodePtr->ptr1);        // Output addExp code (ans in ac0)
       push(ac0,"");                      // Save answer
       term(nodePtr->ptr3);               // Output term code (ans in ac0)
@@ -381,14 +381,14 @@ static void additiveExp(TreeNode* nodePtr) {
       else
         emitRO("SUB",ac0,ac1,ac0,""); // ac0 = addExp - term
 
-    } else //if (nodePtr->kind == addExp2)
+    } else //if (nodePtr->kind == addExpTerm)
       term(nodePtr->ptr1);               // Output code for term
 }
 
 /* 25. term -> term mulop factor | factor */
 /* 26. mulop -> '*' | '/' */
 static void term(TreeNode* nodePtr) {
-    if (nodePtr->kind == term1) {
+    if (nodePtr->kind == termNormal) {
 	term(nodePtr->ptr1);                 // Output term code (ans in ac0)
 	push(ac0,"");                        // Save 1st operand
 	factor(nodePtr->ptr3);               // Output factor code (ans in ac0)
@@ -398,7 +398,7 @@ static void term(TreeNode* nodePtr) {
 	    emitRO("MUL",ac0,ac1,ac0,"");    // ac0 = term * factor
 	else
 	    emitRO("DIV",ac0,ac1,ac0,"");    // ac0 = term / factor
-    } else //if (nodePtr->kind == term2)
+    } else //if (nodePtr->kind == termFactor)
 	factor(nodePtr->ptr1);               // Output code for factor
 }
 

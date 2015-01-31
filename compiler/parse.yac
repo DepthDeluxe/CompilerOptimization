@@ -386,14 +386,14 @@ relop : LE
 | NE
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = relop6; }
+  $$->kind = relopNE; }
 ;
 
 /* 23. addExp -> addExp addop term | term */
 addExp : addExp addop term
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = addExp1;          /* Set the kind. */
+  $$->kind = addExpNormal;          /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
   $$->ptr2 = $2;
   $$->ptr3 = $3;
@@ -401,7 +401,7 @@ addExp : addExp addop term
 | term
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = addExp2;          /* Set the kind. */
+  $$->kind = addExpTerm;          /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 ;
@@ -423,7 +423,7 @@ addop : '+'
 term : term mulop factor
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = term1;            /* Set the kind. */
+  $$->kind = termNormal;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
   $$->ptr2 = $2;
   $$->ptr3 = $3;
@@ -431,7 +431,7 @@ term : term mulop factor
 | factor
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = term2;            /* Set the kind. */
+  $$->kind = termFactor;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
 ;

@@ -393,11 +393,11 @@ static void var(TreeNode* nodePtr, int rlval) {
 /* 22. relop -> '<=' | '<' | '>' | '>=' | '==' | '!=' */
 static void simpleExp(TreeNode* nodePtr) {
     if (nodePtr->kind == simpExp1) {
-    additiveExp(nodePtr->ptr1);           // Check addExp1 code
+    additiveExp(nodePtr->ptr1);           // Check addExpNormal code
     additiveExp(nodePtr->ptr3);           // Check addExp2 code
 
     _test(nodePtr->ptr2, "simpexp->relop");
-    if (nodePtr->ptr2->kind < relopLE || nodePtr->ptr2->kind > relop6) {
+    if (nodePtr->ptr2->kind < relopLE || nodePtr->ptr2->kind > relopNE) {
         fprintf(stderr, "Static semantic error!  Line %d, ",
             nodePtr->line);
         fprintf(stderr, "unknown relational operator.\n");
@@ -410,7 +410,7 @@ static void simpleExp(TreeNode* nodePtr) {
 /* 23. addExp -> addExp addop term | term* /
 /* 24. addop -> '+' | '-' */
 static void additiveExp(TreeNode* nodePtr) {
-    if (nodePtr->kind == addExp1) {
+    if (nodePtr->kind == addExpNormal) {
     additiveExp(nodePtr->ptr1);           // Check addExp code
     term(nodePtr->ptr3);                  // Check term code
     } else //if (nodePtr->kind == addExp2)
@@ -423,7 +423,7 @@ static void term(TreeNode* nodePtr) {
     if (nodePtr->kind == term1) {
     term(nodePtr->ptr1);                  // Check term code
     factor(nodePtr->ptr3);                // Check factor code
-    } else //if (nodePtr->kind == term2)
+    } else //if (nodePtr->kind == termFactor)
     factor(nodePtr->ptr1);                // Check factor code
 }
 
