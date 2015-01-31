@@ -91,11 +91,11 @@ void printNodeType(TreeNode* node) {
   case simpExp2:
     type = "sxp";
     break;
-  case relop1:
-  case relop2:
-  case relop3:
-  case relop4:
-  case relop5:
+  case relopLE:
+  case relopLT:
+  case relopGT:
+  case relopGE:
+  case relopEQ:
   case relop6:
     type = "rop";
     break;

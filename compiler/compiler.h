@@ -22,7 +22,7 @@ typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varD
       stmtListNormal, stmtListVoid, funStmt1,
       stmtExp, stmtComp, stmtSel, stmt4, stmtRet, expStmtNormal, expStmtVoid, selStmtIf,
       selStmtIfElse, iterStmt1, retStmtVoid, retStmtExp, exp1, exp2, var1, var2,
-      simpExp1, simpExp2, relop1, relop2, relop3, relop4, relop5,
+      simpExp1, simpExp2, relopLE, relopLT, relopGT, relopGE, relopEQ,
       relop6, addExp1, addExp2, addop, subop, term1, term2, mulopMult,
       mulopDiv, factorExp, factorVar, factorCall, factorNum, call1, argsNormal, argsVoid,
       argListNormal, argListSingle} nodekind_t;

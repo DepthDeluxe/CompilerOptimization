@@ -343,15 +343,15 @@ static void simpleExp(TreeNode* nodePtr) {
 	loc4 = emitSkip(0);           // End location
 
 	emitBackup(loc);              // Fill in relop jump instr
-	if (nodePtr->ptr2->kind == relop1)
+	if (nodePtr->ptr2->kind == relopLE)
 	    emitRMAbs("JLE",ac0,loc3,""); // LE
-	else if (nodePtr->ptr2->kind == relop2)
+	else if (nodePtr->ptr2->kind == relopLT)
 	    emitRMAbs("JLT",ac0,loc3,""); // LT
-	else if (nodePtr->ptr2->kind == relop3)
+	else if (nodePtr->ptr2->kind == relopGT)
 	    emitRMAbs("JGT",ac0,loc3,""); // GT
-	else if (nodePtr->ptr2->kind == relop4)
+	else if (nodePtr->ptr2->kind == relopGE)
 	    emitRMAbs("JGE",ac0,loc3,""); // GT
-	else if (nodePtr->ptr2->kind == relop5)
+	else if (nodePtr->ptr2->kind == relopEQ)
 	    emitRMAbs("JEQ",ac0,loc3,""); // EQ
 	else //if (nodePtr->ptr2->kind == relop6)
 	    emitRMAbs("JNE",ac0,loc3,""); // NE

@@ -397,7 +397,7 @@ static void simpleExp(TreeNode* nodePtr) {
     additiveExp(nodePtr->ptr3);           // Check addExp2 code
 
     _test(nodePtr->ptr2, "simpexp->relop");
-    if (nodePtr->ptr2->kind < relop1 || nodePtr->ptr2->kind > relop6) {
+    if (nodePtr->ptr2->kind < relopLE || nodePtr->ptr2->kind > relop6) {
         fprintf(stderr, "Static semantic error!  Line %d, ",
             nodePtr->line);
         fprintf(stderr, "unknown relational operator.\n");

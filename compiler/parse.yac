@@ -366,23 +366,23 @@ simpExp : addExp relop addExp
 relop : LE
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = relop1; }      /* Set the kind. */
+  $$->kind = relopLE; }      /* Set the kind. */
 | LT
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = relop2; }
+  $$->kind = relopLT; }
 | GT
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = relop3; }
+  $$->kind = relopGT; }
 | GE
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = relop4; }
+  $$->kind = relopGE; }
 | EQ
 {
   $$ = newParseTreeNode();     /* Set the node. */
-  $$->kind = relop5; }
+  $$->kind = relopEQ; }
 | NE
 {
   $$ = newParseTreeNode();     /* Set the node. */
