@@ -407,7 +407,7 @@ static void simpleExp(TreeNode* nodePtr) {
     additiveExp(nodePtr->ptr1);           // Check addExp code
 }
 
-/* 23. addExp -> addExp addop term | term* /
+/* 23. addExp -> addExp addop term | term */
 /* 24. addop -> '+' | '-' */
 static void additiveExp(TreeNode* nodePtr) {
     if (nodePtr->kind == addExpNormal) {
