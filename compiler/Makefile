@@ -1,5 +1,10 @@
 # compile compiler with GCC
+CLANG_PATH = "/usr/bin/clang"
+ifneq ($(wildcard $(CLANG_PATH)),"")
+CC = clang
+else
 CC = gcc
+endif
 
 # import glib into build system
 CFLAGS = -std=c99 -Wall `pkg-config --cflags --libs glib-2.0`
@@ -7,8 +12,10 @@ CFLAGS = -std=c99 -Wall `pkg-config --cflags --libs glib-2.0`
 # main build command
 all: ctags cm
 
+gcc: CC=gcc
+gcc: all
 debug: CFLAGS += -g
-debug: ctags cm
+debug: all
 
 lex.yy.c: scan.lex compiler.h
 	flex scan.lex
