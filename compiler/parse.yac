@@ -449,7 +449,7 @@ mulop : '*'
 }
 ;
 
-/* 27. factor -> '(' exp ')' | var | call | NUM */
+/* 27. factor -> '(' exp ')' | var | call | NUM | FNUM */
 factor : '(' exp ')'
 {
   $$ = newParseTreeNode();     /* Set the node. */
@@ -472,6 +472,11 @@ factor : '(' exp ')'
 {
   $$ = $1;                     /* Set the node. */
   $$->kind = factorNum;          /* Set the kind. */
+}
+| FNUM
+{
+  $$ = $1;
+  $$->kind = factorFloat;
 }
 ;
 

@@ -459,15 +459,23 @@ static void term(TreeNode* nodePtr) {
     factor(nodePtr->ptr1);                // Check factor code
 }
 
-/* 27. factor -> '(' exp ')' | var | call | NUM */
+/* 27. factor -> '(' exp ')' | var | call | NUM | FNUM */
 static void factor(TreeNode* nodePtr) {
-    if (nodePtr->kind == factorExp)
-    expression(nodePtr->ptr1);            // Check exp code
-    else if (nodePtr->kind == factorVar)
-    var(nodePtr->ptr1,1);                 // Check var code
-    else if (nodePtr->kind == factorCall)
-    call(nodePtr->ptr1);                  // Check call code
-    else ; //if (nodePtr->kind == factorNum)    // No checks needed.
+  switch( nodePtr->kind ) {
+    case factorExp:
+      expression(nodePtr->ptr1);            // Check exp code
+      break;
+    case factorVar:
+      var(nodePtr->ptr1,1);                 // Check var code
+      break;
+    case factorCall:
+      call(nodePtr->ptr1);                  // Check call code
+      break;
+
+    // don't do anything for NUM or FNUM
+    default:
+      break;
+  }
 }
 
 /* 28. call -> ID '(' args ')' */
@@ -479,9 +487,9 @@ static void call(TreeNode* nodePtr) {
     args(nodePtr->ptr1);                      // Check args code
 
     if (semRecPtr->f.localSpace >= 0)
-    nodePtr->locals_so_far = semRecPtr->f.localSpace;
+      nodePtr->locals_so_far = semRecPtr->f.localSpace;
     else
-    nodePtr->locals_so_far = locals;
+      nodePtr->locals_so_far = locals;
 }
 
 /* 29. args -> argList | empty */

@@ -26,6 +26,7 @@ newline    \n
 
 %%
 "int"        {return INT;}
+"float"      {return FLOAT;}
 "void"       {return VOID;}
 "if"         {return IF;}
 "else"       {return ELSE;}

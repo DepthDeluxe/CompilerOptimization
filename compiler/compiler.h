@@ -24,7 +24,7 @@ typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varD
       selStmtIfElse, iterStmt1, retStmtVoid, retStmtExp, expAssign, expSimple, varSingle, varArray,
       simpExp1, simpExp2, relopLE, relopLT, relopGT, relopGE, relopEQ,
       relopNE, addExpNormal, addExpTerm, addop, subop, termNormal, termFactor, mulopMult,
-      mulopDiv, factorExp, factorVar, factorCall, factorNum, call1, argsNormal, argsVoid,
+      mulopDiv, factorExp, factorVar, factorCall, factorNum, factorFloat, call1, argsNormal, argsVoid,
       argListNormal, argListSingle} nodekind_t;
 
 /* *** structures for Semantic Checking ***********************************
@@ -136,6 +136,7 @@ extern void emitRestore(void);
 extern void emitComment(char*  c);
 extern void emitRO(char* op, int r, int s, int t, char* c);
 extern void emitRM(char* op, int r, int d, int s, char* c);
+extern void emitFloatSet(int reg, float value);
 extern void emitRMAbs( char* op, int r, int a, char*  c);
 extern void push(int reg, char* comm) ;
 extern void pop(int reg, char* comm);

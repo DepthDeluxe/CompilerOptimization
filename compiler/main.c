@@ -190,6 +190,10 @@ void emitRM( char * op, int r, int d, int s, char *c){
      if (highEmitLoc < emitLoc)  highEmitLoc = emitLoc;
 } /* emitRM */
 
+void emitFloatSet(int reg, float value) {
+  printf("%3d:  LDF  %d,%f(0)\t\tFloating point magic\n", emitLoc++, reg, value);
+}
+
 /* Procedure emitRM_Abs converts an absolute reference
  * to a pc-relative reference when emitting a
  * register-to-memory TM instruction
