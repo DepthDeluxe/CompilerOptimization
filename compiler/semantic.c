@@ -64,12 +64,30 @@ static void program(TreeNode* nodePtr) {
     semRecPtr->f.localSpace = 0;
     insert(nodePtr->line, symTabPtr,"input",semRecPtr);
 
+    // Make a semantic rec for the inputf function
+    if ( with_float ) {
+      semRecPtr = newSemRec();
+      semRecPtr->f.kind = func;
+      semRecPtr->f.numParams = 0;
+      semRecPtr->f.localSpace = 0;
+      insert(nodePtr->line, symTabPtr,"inputf",semRecPtr);
+    }
+
     // Make a semantic rec for the output function
     semRecPtr = newSemRec();
     semRecPtr->f.kind = func;
     semRecPtr->f.numParams = 1;
     semRecPtr->f.localSpace = 0;
     insert(nodePtr->line, symTabPtr,"output",semRecPtr);
+
+    // Make a semantic rec for the outputf function
+    if ( with_float ) {
+      semRecPtr = newSemRec();
+      semRecPtr->f.kind = func;
+      semRecPtr->f.numParams = 1;
+      semRecPtr->f.localSpace = 0;
+      insert(nodePtr->line, symTabPtr,"outputf",semRecPtr);
+    }
 
     declarationList(nodePtr->ptr1);         // Check declList code
 

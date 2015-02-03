@@ -12,6 +12,9 @@
 
 #define M 11
 
+// options
+int with_float;
+
 // Types: int, array of int, array of ptr to int, function
 typedef enum {intvar, intarr, floatvar, refarr, func} types_t;
 

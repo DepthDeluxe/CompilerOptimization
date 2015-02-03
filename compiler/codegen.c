@@ -59,18 +59,39 @@ static void program(TreeNode* nodePtr) {
     main2 = emitSkip(1);                           // Init PC here
     emitRO("HALT",0,0,0,"Halt");                   // Stop.
 
+    // provide input function
     semRecPtr = lookup(nodePtr->line, symTabPtr, "input");
     semRecPtr->f.addr = emitSkip(0);
     emitRM("ST",ac0,-1,fp,"Input Function, store return addr");
     emitRO("IN",ac0,0,0,  "     Get input");
     emitRM("LD",pc,-1,fp, "     Return (end of function)");
 
+    // provide inputf function
+    if ( with_float) {
+      semRecPtr = lookup(nodePtr->line, symTabPtr, "input");
+      semRecPtr->f.addr = emitSkip(0);
+      emitRM("ST",ac0,-1,fp,"Inputf Function, store return addr");
+      emitRO("INF",ac0,0,0,  "     Get input");
+      emitRM("LD",pc,-1,fp, "     Return (end of function)");
+    }
+
+    // provide output function
     semRecPtr = lookup(nodePtr->line, symTabPtr, "output");
     semRecPtr->f.addr = emitSkip(0);
     emitRM("ST",ac0,-1,fp,"Output Function, store return addr");
     emitRM("LD",ac0,-2,fp,"     Get output");
     emitRO("OUT",ac0,0,0, "     Give output");
     emitRM("LD",pc,-1,fp, "     Return (end of function)");
+
+    // provide outputf function
+    if ( with_float ) {
+      semRecPtr = lookup(nodePtr->line, symTabPtr, "outputf");
+      semRecPtr->f.addr = emitSkip(0);
+      emitRM("ST",ac0,-1,fp,"Outputf Function, store return addr");
+      emitRM("LD",ac0,-2,fp,"     Get output");
+      emitRO("OUTF",ac0,0,0, "     Give output");
+      emitRM("LD",pc,-1,fp, "     Return (end of function)");
+    }
 
     declarationList(nodePtr->ptr1);                  // Code for declList
 

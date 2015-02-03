@@ -17,7 +17,15 @@ void generateCode(TreeNode* nodePt);
 /*                                                                          */
 /****************************************************************************/
 
-int main() {
+int main(int argc, char** argv) {
+  // parse the command line options
+  with_float = 0;
+  for (int n = 1; n < argc; n++) {
+    if ( strcmp(argv[n], "-f") == 0 ) {
+      with_float = 1;
+    }
+  }
+
   fprintf(stderr,"Creating parse tree...\n");
   yyparse();
   fprintf(stderr,"Semantic checking...\n");
