@@ -21,6 +21,7 @@ static void statementList(TreeNode* nodePtr);
 static void statement(TreeNode* nodePtr);
 static void expressionStmt(TreeNode* nodePtr);
 static void selectionStmt(TreeNode* nodePtr);
+static void whileStmt(TreeNode* nodePtr);
 static void returnStmt(TreeNode* nodePtr);
 static void expression(TreeNode* nodePtr);
 static void var(TreeNode* nodePtr, int rlval);
@@ -304,17 +305,19 @@ static void statementList(TreeNode* nodePtr) {
     } //else if (nodePtr->kind == stmtListVoid)  // No checks needed.
 }
 
-/* 13. stmt -> expStmt | compStmt | selStmt | retStmt */
+/* 13. stmt -> expStmt | compStmt | selStmt | whileStmt | retStmt */
 /* 13a. e_stmt -> expStmt | compStmt | e_selStmt | retStmt */
 static void statement(TreeNode* nodePtr) {
     if (nodePtr->kind == stmtExp)
-    expressionStmt(nodePtr->ptr1);        // Check expStmt code
+      expressionStmt(nodePtr->ptr1);        // Check expStmt code
     else if (nodePtr->kind == stmtComp)
-    compoundStmt(nodePtr->ptr1);          // Check compStmt code
+      compoundStmt(nodePtr->ptr1);          // Check compStmt code
     else if (nodePtr->kind == stmtSel)
-    selectionStmt(nodePtr->ptr1);         // Check selStmt code
+      selectionStmt(nodePtr->ptr1);         // Check selStmt code
+    else if (nodePtr->kind == stmtWhile)
+      whileStmt(nodePtr->ptr1);
     else //if (nodePtr->kind == stmtRet)
-    returnStmt(nodePtr->ptr1);            // Check retStmt code
+      returnStmt(nodePtr->ptr1);            // Check retStmt code
 }
 
 /* 14. expStmt -> exp ';' | ';' */
@@ -340,13 +343,19 @@ static void compoundStmt(TreeNode* nodePtr) {
 /* 16a. e_selStmt -> if '(' exp ')' e_stmt else stmt */
 static void selectionStmt(TreeNode* nodePtr) {
     if (nodePtr->kind == selStmtIf) {
-    expression(nodePtr->ptr1);            // Check exp code
-    statement(nodePtr->ptr2);             // Check stmt code
+      expression(nodePtr->ptr1);            // Check exp code
+      statement(nodePtr->ptr2);             // Check stmt code
     } else { //if (nodePtr->kind == selStmtIfElse)
-    expression(nodePtr->ptr1);            // Check exp code
-    statement(nodePtr->ptr2);             // Check stmtExp code
-    statement(nodePtr->ptr3);             // Check stmtComp code
+      expression(nodePtr->ptr1);            // Check exp code
+      statement(nodePtr->ptr2);             // Check stmtExp code
+      statement(nodePtr->ptr3);             // Check stmtComp code
     }
+}
+
+/* 17. whileStmt -> while '(' exp ')' stmt */
+static void whileStmt(TreeNode* nodePtr) {
+  expression( nodePtr->ptr1 );
+  statement( nodePtr->ptr2 );
 }
 
 /* 18. retStmt -> return ';' | return exp ';' */

@@ -60,7 +60,7 @@ void printNodeType(TreeNode* node) {
   case stmtExp:
   case stmtComp:
   case stmtSel:
-  case stmt4:
+  case stmtWhile:
   case stmtRet:
     type = "stm";
     break;
@@ -72,8 +72,8 @@ void printNodeType(TreeNode* node) {
   case selStmtIfElse:
     type = "sst";
     break;
-  case iterStmt1:
-    type = "ist";
+  case whileStmtNormal:
+    type = "whi";
     break;
   case retStmtVoid:
   case retStmtExp:

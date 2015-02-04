@@ -214,9 +214,9 @@ stmt : expStmt
 }
 | whileStmt
 {
-  $$ = newPaseTreeNode();
+  $$ = newParseTreeNode();
   $$->kind = stmtWhile;
-  $$->prt1 = $1;
+  $$->ptr1 = $1;
 }
 | retStmt
 {
@@ -311,9 +311,9 @@ e_selStmt : IF '(' exp ')' e_stmt ELSE e_stmt
 whileStmt : WHILE '(' exp ')' stmt
 {
   $$ = newParseTreeNode(); /* set the node */
-  $$->kind = whileStmt;
+  $$->kind = whileStmtNormal;
   $$->ptr1 = $3;
-  $$->ptr = $5;
+  $$->ptr2 = $5;
 }
 ;
 

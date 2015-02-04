@@ -24,7 +24,7 @@ typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varD
       paramListSingle, paramSingle, paramArray, compStmt1, localDeclNormal, localDeclVoid,
       stmtListNormal, stmtListVoid, funStmt1,
       stmtExp, stmtComp, stmtSel, stmtWhile, stmtRet, expStmtNormal, expStmtVoid, selStmtIf,
-      selStmtIfElse, whileStmt, retStmtVoid, retStmtExp, expAssign, expSimple, varSingle, varArray,
+      selStmtIfElse, whileStmtNormal, retStmtVoid, retStmtExp, expAssign, expSimple, varSingle, varArray,
       simpExp1, simpExp2, relopLE, relopLT, relopGT, relopGE, relopEQ,
       relopNE, addExpNormal, addExpTerm, addop, subop, termNormal, termFactor, mulopMult,
       mulopDiv, factorExp, factorVar, factorCall, factorNum, factorFloat, call1, argsNormal, argsVoid,
