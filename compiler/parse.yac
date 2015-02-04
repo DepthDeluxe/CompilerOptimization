@@ -193,7 +193,7 @@ stmtList : stmt stmtList
 }
 ;
 
-/* 13. stmt -> expStmt | compStmt | selStmt | retStmt */
+/* 13. stmt -> expStmt | compStmt | selStmt | whileStmt | retStmt */
 stmt : expStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
@@ -211,6 +211,12 @@ stmt : expStmt
   $$ = newParseTreeNode();     /* Set the node. */
   $$->kind = stmtSel;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
+}
+| whileStmt
+{
+  $$ = newParseTreeNode();
+  $$->kind = stmtWhile;
+  $$->ptr1 = $1;
 }
 | retStmt
 {
@@ -298,6 +304,16 @@ e_selStmt : IF '(' exp ')' e_stmt ELSE e_stmt
   $$->ptr1 = $3;   /* Set the pointers. */
   $$->ptr2 = $5;
   $$->ptr3 = $7;
+}
+;
+
+/* 17: whileStmt -> while '(' exp ')' stmt */
+whileStmt : WHILE '(' exp ')' stmt
+{
+  $$ = newParseTreeNode(); /* set the node */
+  $$->kind = whileStmtNormal;
+  $$->ptr1 = $3;
+  $$->ptr2 = $5;
 }
 ;
 

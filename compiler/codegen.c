@@ -22,6 +22,7 @@ static void statementList(TreeNode* nodePtr);
 static void statement(TreeNode* nodePtr);
 static void expressionStmt(TreeNode* nodePtr);
 static void selectionStmt(TreeNode* nodePtr);
+static void whileStmt(TreeNode* nodePtr);
 static void returnStmt(TreeNode* nodePtr);
 static void expression(TreeNode* nodePtr);
 static void var(TreeNode* nodePtr, int rlval);
@@ -199,6 +200,8 @@ static void statement(TreeNode* nodePtr) {
       compoundStmt(nodePtr->ptr1);     // Output code for compStmt
     else if (nodePtr->kind == stmtSel)
       selectionStmt(nodePtr->ptr1);    // Output code for selStmt
+    else if (nodePtr->kind == stmtWhile)
+      whileStmt( nodePtr->ptr1 );
     else //if (nodePtr->kind == stmtRet)
       returnStmt(nodePtr->ptr1);       // Output code for retStmt
 }
@@ -254,6 +257,37 @@ static void selectionStmt(TreeNode* nodePtr) {
       emitRMAbs("JEQ",ac0,loc4,"  if: Jump to the end");     // Jump to end
       emitRestore();                    // Restore instr counter to end
     }
+}
+
+/* 17. whileStmt -> while '(' exp ')' stmt */
+static void whileStmt( TreeNode* nodePtr ) {
+  fprintf(stderr, "whileStmt: code generation\n");
+
+  // get the start of the expression
+  int startLoc = emitSkip(0);
+
+  // emit the expression
+  expression( nodePtr->ptr1 );
+
+  int cndJmpLoc = emitSkip(1);
+
+  // output the statement code
+  statement( nodePtr->ptr2 );
+
+  // put an unconditional jump back to the top
+  emitRM("LDC",ac0,0,0,"");
+  emitRMAbs("JEQ", ac0, startLoc,
+      "  if: Jump to else part if test is false (exp == 0), this is unconditional");
+
+  // mark the end and resume to next greatest value
+  int endLoc = emitSkip(0);
+
+  // back up and write the if expression
+  // JEQ to after the statement
+  emitBackup(cndJmpLoc);
+  emitRMAbs("JEQ",ac0,endLoc,
+      "  if test: Jump to end if false (exp == 0)");
+  emitRestore();
 }
 
 /* 18. retStmt -> return ';' | return exp ';' */
@@ -435,7 +469,6 @@ static void factor(TreeNode* nodePtr) {
     else if (nodePtr->kind == factorFloat)
       emitFloatSet(ac0, nodePtr->value.floating);
     else //if (nodePtr->kind == factorNum)
-
       emitRM("LDC",ac0,nodePtr->value.integer,0,""); // ac0 = NUM value
 }
 
