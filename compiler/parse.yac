@@ -4,7 +4,7 @@
 #include "compiler.h"
 %}
 
-%token ID NUM INT FLOAT FNUM VOID IF ELSE WHILE RET LE LT GT GE EQ NE
+%token ID NUM INT FLOAT FNUM VOID IF ELSE WHILE BREAK CONTINUE RET LE LT GT GE EQ NE
 
 %%
 /* This yacc file parses C- tokens and produces a tree.
@@ -193,7 +193,7 @@ stmtList : stmt stmtList
 }
 ;
 
-/* 13. stmt -> expStmt | compStmt | selStmt | whileStmt | retStmt */
+/* 13. stmt -> expStmt | compStmt | selStmt | whileStmt | jumpStmt | retStmt  */
 stmt : expStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
@@ -216,6 +216,12 @@ stmt : expStmt
 {
   $$ = newParseTreeNode();
   $$->kind = stmtWhile;
+  $$->ptr1 = $1;
+}
+| jumpStmt
+{
+  $$ = newParseTreeNode();
+  $$->kind = stmtJump;
   $$->ptr1 = $1;
 }
 | retStmt
@@ -316,6 +322,18 @@ whileStmt : WHILE '(' exp ')' stmt
   $$->ptr2 = $5;
 }
 ;
+
+/* 17a: jumpStmt -> break | continue */
+jumpStmt : BREAK
+{
+  $$ = newParseTreeNode();
+  $$->kind = jumpStmtBreak;
+}
+| CONTINUE
+{
+  $$ = newParseTreeNode();
+  $$->kind = jumpStmtContinue;
+}
 
 /* 18. retStmt -> return ';' | return exp ';' */
 retStmt : RET ';'

@@ -22,6 +22,7 @@ static void statement(TreeNode* nodePtr);
 static void expressionStmt(TreeNode* nodePtr);
 static void selectionStmt(TreeNode* nodePtr);
 static void whileStmt(TreeNode* nodePtr);
+static void jumpStmt(TreeNode* nodePtr);
 static void returnStmt(TreeNode* nodePtr);
 static void expression(TreeNode* nodePtr);
 static void var(TreeNode* nodePtr, int rlval);
@@ -36,6 +37,7 @@ static void argList(TreeNode* nodePtr);
 // Evil (but necessary) Globals!
 int         locals = 0;      // Number of local variables in the current scope
 int         theNumParams;    // Number of params in the current function
+int         in_while = 0;
 
 /****************************************************************************/
 /*                                                                          */
@@ -316,6 +318,8 @@ static void statement(TreeNode* nodePtr) {
       selectionStmt(nodePtr->ptr1);         // Check selStmt code
     else if (nodePtr->kind == stmtWhile)
       whileStmt(nodePtr->ptr1);
+    else if (nodePtr->kind == stmtJump)
+      jumpStmt(nodePtr->ptr1);
     else //if (nodePtr->kind == stmtRet)
       returnStmt(nodePtr->ptr1);            // Check retStmt code
 }
@@ -354,8 +358,28 @@ static void selectionStmt(TreeNode* nodePtr) {
 
 /* 17. whileStmt -> while '(' exp ')' stmt */
 static void whileStmt(TreeNode* nodePtr) {
+  // in while stmt
+  int outermost_loop = !in_while;
+  if ( outermost_loop ) {
+    in_while = 1;
+  }
+
   expression( nodePtr->ptr1 );
   statement( nodePtr->ptr2 );
+
+  // reset the in_while statement
+  if ( outermost_loop ) {
+    in_while = 0;
+  }
+}
+
+/* 17a. jumpStmt -> BREAK | CONTINUE */
+static void jumpStmt(TreeNode* nodePtr) {
+  // make sure we are in a while loop
+  if ( !in_while ) {
+    fprintf(stderr, "Used either \"break\" or \"continue\" outside of while loop!\n");
+    exit(-1);
+  }
 }
 
 /* 18. retStmt -> return ';' | return exp ';' */

@@ -23,6 +23,7 @@ static void statement(TreeNode* nodePtr);
 static void expressionStmt(TreeNode* nodePtr);
 static void selectionStmt(TreeNode* nodePtr);
 static void whileStmt(TreeNode* nodePtr);
+static void jumpStmt(TreeNode* nodePtr);
 static void returnStmt(TreeNode* nodePtr);
 static void expression(TreeNode* nodePtr);
 static void var(TreeNode* nodePtr, int rlval);
@@ -33,6 +34,10 @@ static void factor(TreeNode* nodePtr);
 static void call(TreeNode* nodePtr);
 static void args(TreeNode* nodePtr);
 static void argList(TreeNode* nodePtr);
+
+/* evil globals, really shouldn't be using theses but IDGAF */
+int whileConditionalLocation = -1;
+int whileJumpLocation = -1;
 
 /****************************************************************************/
 /*                                                                          */
@@ -202,6 +207,8 @@ static void statement(TreeNode* nodePtr) {
       selectionStmt(nodePtr->ptr1);    // Output code for selStmt
     else if (nodePtr->kind == stmtWhile)
       whileStmt( nodePtr->ptr1 );
+    else if (nodePtr->kind == stmtJump)
+      jumpStmt( nodePtr-> ptr1 );
     else //if (nodePtr->kind == stmtRet)
       returnStmt(nodePtr->ptr1);       // Output code for retStmt
 }
@@ -265,11 +272,13 @@ static void whileStmt( TreeNode* nodePtr ) {
 
   // get the start of the expression
   int startLoc = emitSkip(0);
+  whileConditionalLocation = startLoc;
 
   // emit the expression
   expression( nodePtr->ptr1 );
 
   int cndJmpLoc = emitSkip(1);
+  whileJumpLocation = cndJmpLoc;
 
   // output the statement code
   statement( nodePtr->ptr2 );
@@ -288,6 +297,24 @@ static void whileStmt( TreeNode* nodePtr ) {
   emitRMAbs("JEQ",ac0,endLoc,
       "  if test: Jump to end if false (exp == 0)");
   emitRestore();
+}
+
+/* 17a. jumpStmt -> break | continue */
+static void jumpStmt(TreeNode* nodePtr) {
+  if ( nodePtr->kind == jumpStmtBreak ) {
+    // branch to the top conditional
+    emitRM("LDC",ac0,0,1,
+           "  if: Put a 0 in ac0 so we jump over the else part");
+    emitRM("LDC",ac1,0,0,
+           "  if: Put a 0 in ac0 so we jump over the else part");
+    emitRMAbs("JEQ",ac1,whileJumpLocation,"  if: Jump to the jump at top of while loop");     // Jump to the jump
+  }
+  else { // nodePtr->kind == jumpStmtContinue
+    // branch back to the top of the while loop
+    emitRM("LDC",ac0,0,0,
+           "  if: Put a 0 in ac0 so we jump over the else part");
+    emitRMAbs("JEQ",ac0,whileConditionalLocation,"  if: Jump to the conditional");     // Jump to conditional
+  }
 }
 
 /* 18. retStmt -> return ';' | return exp ';' */
