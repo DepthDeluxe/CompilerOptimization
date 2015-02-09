@@ -417,39 +417,75 @@ static void var(TreeNode* nodePtr, int rlval) {
 /* 21. simpExp -> addExp relop addExp | addExp */
 /* 22. relop -> '<=' | '<' | '>' | '>=' | '==' | '!=' */
 static void simpleExp(TreeNode* nodePtr) {
-    int loc, loc2, loc3, loc4;
     if (nodePtr->kind == simpExp1) {
       additiveExp(nodePtr->ptr1);   // Output code for addExpNormal (ans in ac0)
       push(ac0,"");                 // Save 1st operand
       additiveExp(nodePtr->ptr3);   // Output code for addExpTerm (ans in ac0)
       pop(ac1,"");                  // Get 1st operand
 
+      // subtract the two exps to compare them
       emitRO("SUB",ac0,ac1,ac0,""); // ac0 = addExpNormal - addExpTerm
-      loc = emitSkip(1);            // Relop: jump to T or continue to F
-      emitRM("LDC",ac0,0,0,"");     // ac0 = FALSE
-      emitRM("LDC",ac1,0,0,"");
-      loc2 = emitSkip(1);           // Jump to end
-      loc3 = emitSkip(0);           // True location
-      emitRM("LDC",ac0,1,0,"");     // ac0 = TRUE
-      loc4 = emitSkip(0);           // End location
 
-      emitBackup(loc);              // Fill in relop jump instr
+      // assumptions
+      // False: LT, GT, EQ, NE
+      // True: LE, GE
+      nodekind_t relop_kind = nodePtr->ptr2->kind;
+      int cndJumpLoc, uncndJumpLoc, confirmedLoc, endLoc;
+      if ( relop_kind == relopLT ||
+           relop_kind == relopGT ||
+           relop_kind == relopEQ ||
+           relop_kind == relopNE ) {
+
+        // conditional jump that depends on the SUB of ac0 and ac1
+        cndJumpLoc = emitSkip(1);     // Relop: jump to F or continue to T
+
+        // sets result to be true and unconditionally
+        // jumps to the end
+        emitRM("LDC",ac0,1,0,"");     // ac0 = TRUE
+        emitRM("LDC",ac1,0,0,"");     // set up for unconditional jump
+        uncndJumpLoc = emitSkip(1);   // unconditional jump to end
+
+        // location of opposite setting
+        confirmedLoc = emitSkip(0);   // True location
+        emitRM("LDC",ac0,0,0,"");     // ac0 = FALSE
+
+        endLoc = emitSkip(0);         // End location
+      } else {
+        // conditional jump that depends on the SUB of ac0 and ac1
+        cndJumpLoc = emitSkip(1);     // Relop: jump to T or continue to F
+
+        // sets result to be true and unconditionally
+        // jumps to the end
+        emitRM("LDC",ac0,0,0,"");     // ac0 = FALSE
+        emitRM("LDC",ac1,0,0,"");     // set up for unconditional jump
+        uncndJumpLoc = emitSkip(1);   // unconditional jump to end
+
+        // location of opposite setting
+        confirmedLoc = emitSkip(0);   // True location
+        emitRM("LDC",ac0,1,0,"");     // ac0 = TRUE
+
+        endLoc = emitSkip(0);         // End location
+      }
+
+      // write in the conditional jump, this is the hard part since we assume
+      // different conditions for different comparison ops
+      emitBackup(cndJumpLoc);              // Fill in relop jump instr
       if (nodePtr->ptr2->kind == relopLE)
-          emitRMAbs("JLE",ac0,loc3,""); // LE
+          emitRMAbs("JLE",ac0,confirmedLoc,""); // LE
       else if (nodePtr->ptr2->kind == relopLT)
-          emitRMAbs("JLT",ac0,loc3,""); // LT
+          emitRMAbs("JGE",ac0,confirmedLoc,""); // LT
       else if (nodePtr->ptr2->kind == relopGT)
-          emitRMAbs("JGT",ac0,loc3,""); // GT
+          emitRMAbs("JLE",ac0,confirmedLoc,""); // GT
       else if (nodePtr->ptr2->kind == relopGE)
-          emitRMAbs("JGE",ac0,loc3,""); // GT
+          emitRMAbs("JGE",ac0,confirmedLoc,""); // GE
       else if (nodePtr->ptr2->kind == relopEQ)
-          emitRMAbs("JEQ",ac0,loc3,""); // EQ
+          emitRMAbs("JNE",ac0,confirmedLoc,""); // EQ
       else //if (nodePtr->ptr2->kind == relopNE)
-          emitRMAbs("JNE",ac0,loc3,""); // NE
+          emitRMAbs("JEQ",ac0,confirmedLoc,""); // NE
       emitRestore();
 
-      emitBackup(loc2);             // Fill in jump to end instr
-      emitRMAbs("JEQ",ac1,loc4,""); // Jump to end
+      emitBackup(uncndJumpLoc);             // Fill in jump to end instr
+      emitRMAbs("JEQ",ac1,endLoc,""); // Jump to end
       emitRestore();
     } else //if (nodePtr->kind == simpExp2)
       additiveExp(nodePtr->ptr1);   // Output code for addExp
