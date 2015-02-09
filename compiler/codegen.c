@@ -330,11 +330,19 @@ static void returnStmt(TreeNode* nodePtr) {
 /* 19. exp -> var '=' exp | simpExp */
 static void expression(TreeNode* nodePtr) {
     if (nodePtr->kind == expAssign) {
-      expression(nodePtr->ptr2);         // Output exp code (ans in ac0)
-      push(ac0,"  assignment: save value");
-      var(nodePtr->ptr1, 0);             // Output var code (addr in ac1)
-      pop(ac0,"  assignment: retrieve value");
-      emitRM("ST",ac0,0,ac1,"  assignment: variable = dMem[ac1] = value");
+      // don't push to the stack if there is a single var
+      // can just do operation in-place
+      if ( nodePtr->ptr1->kind == varSingle ) {
+        expression(nodePtr->ptr2);         // Output exp code (ans in ac0)
+        var(nodePtr->ptr1, 0);             // Output var code (addr in ac1)
+        emitRM("ST",ac0,0,ac1,"  assignment: variable = dMem[ac1] = value");
+      } else {
+        expression(nodePtr->ptr2);         // Output exp code (ans in ac0)
+        push(ac0,"  assignment: save value");
+        var(nodePtr->ptr1, 0);             // Output var code (addr in ac1)
+        pop(ac0,"  assignment: retrieve value");
+        emitRM("ST",ac0,0,ac1,"  assignment: variable = dMem[ac1] = value");
+      }
     } else //if (nodePtr->kind == expSimple) {
       simpleExp(nodePtr->ptr1);
 }
