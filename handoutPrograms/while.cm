@@ -1,0 +1,18 @@
+void main(void) {
+  int number;
+
+  number = 0;
+  while ( number < 10 ) {
+    if ( number == 3 ) {
+      number = number + 1;
+      continue;
+    }
+    if ( number == 7 ) {
+      break;
+    }
+    output( number );
+    number = number + 1;
+  }
+
+  output(0-1);
+}

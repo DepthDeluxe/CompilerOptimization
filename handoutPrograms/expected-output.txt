@@ -15,3 +15,10 @@ OUT instruction prints: 1
 OUT instruction prints: 2
 OUT instruction prints: 5
 OUT instruction prints: 1
+OUT instruction prints: 0
+OUT instruction prints: 1
+OUT instruction prints: 2
+OUT instruction prints: 4
+OUT instruction prints: 5
+OUT instruction prints: 6
+OUT instruction prints: -1
