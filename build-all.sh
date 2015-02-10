@@ -1,26 +1,3 @@
-# set the command variable
-command=""
-if [ $# -eq 0 ]; then
-  command="test"
-else
-  command="$1"
-fi
-
-# system constants
-RAW_OUTPUT="/tmp/raw-output.txt"
-OUTPUT="/tmp/output.txt"
-EXPECTED_OUTPUT="../expected-output.txt"
-
-# run different commands depending on option
-case $command in
-test)
-  run_tests
-  ;;
-rebuild)
-  run_rebuild
-  ;;
-esac
-
 # builds the compiler and check
 build_compiler() {
   # build the compiler with GCC since this is
@@ -65,7 +42,8 @@ build_programs() {
 
 run_programs() {
   # run the built programs, remove existing output
-  pushd build
+  pushd "handoutPrograms/build"
+
   test_files=$(ls -1 *.tm)
   rm -rf "$RAW_OUTPUT"
 
@@ -96,7 +74,7 @@ run_programs() {
   popd
 }
 
-run_test() {
+run_tests() {
   build_compiler
   build_programs
   run_programs
@@ -111,5 +89,30 @@ run_rebuild() {
   run_programs
 
   # write the expected output
+  echo "Copying output to \"$EXPECTED_OUTPUT\""
   cp "$OUTPUT" "$EXPECTED_OUTPUT"
 }
+
+# set the command variable
+command=""
+if [ $# -eq 0 ]; then
+  command="test"
+else
+  command="$1"
+fi
+
+# system constants
+RAW_OUTPUT="/tmp/raw-output.txt"
+OUTPUT="/tmp/output.txt"
+EXPECTED_OUTPUT="handoutPrograms/expected-output.txt"
+
+# run different commands depending on option
+case $command in
+test)
+  run_tests
+  ;;
+rebuild)
+  run_rebuild
+  ;;
+esac
+
