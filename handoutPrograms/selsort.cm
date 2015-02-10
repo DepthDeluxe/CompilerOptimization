@@ -1,0 +1,73 @@
+/*********************************************/
+/*                                           */
+/* A C- program implementing selection sort. */
+/*                                           */
+/* Written by:  Kenneth C. Louden            */
+/*                                           */
+/*********************************************/
+
+int x[10];
+
+int minloc(int a[], int low, int high) {
+    int i;
+    int x;
+    int k;
+    k = low;
+    x = a[low];
+    i = low + 1;
+    while (i < high) {
+	if (a[i] < x) {
+	    x = a[i];
+	    k = i;
+	}
+	i = i + 1;
+    }
+    return k;
+}
+
+void sort(int a[], int low, int high) {
+    int i;
+    int k;
+    i = 0;
+    while (i < high-1) {
+	int t;
+	k = minloc(a,i,high);
+	t = a[k];
+	a[k] = a[i];
+	a[i] = t;
+	i = i + 1;
+    }
+}
+
+void main(void) {
+    int i;
+    i = 0;
+    output(1234);
+    x[0] = 6;
+    x[1] = 2;
+    x[2] = 8;
+    x[3] = 3;
+    x[4] = 6;
+    x[5] = 9;
+    x[6] = 1;
+    x[7] = 4;
+    x[8] = 5;
+    x[9] = 7;
+
+    sort(x,0,10);
+    i = 0;
+    if (x[0] == 1)
+	if (x[1] == 2)
+	    if (x[2] == 3)
+		if (x[3] == 4)
+		    if (x[4] == 5)
+			if (x[5] == 6)
+			    if (x[6] == 6)
+				if (x[7] == 7)
+				    if (x[8] == 8)
+					if (x[9] == 9) {
+					    output(1234);
+					    return;
+					}
+    output(9876);
+}

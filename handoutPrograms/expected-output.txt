@@ -14,6 +14,8 @@ OUT instruction prints: 3
 OUT instruction prints: 1
 OUT instruction prints: 2
 OUT instruction prints: 5
+OUT instruction prints: 1234
+OUT instruction prints: 1234
 OUT instruction prints: 1
 OUT instruction prints: 0
 OUT instruction prints: 1
