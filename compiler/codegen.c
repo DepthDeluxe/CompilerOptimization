@@ -417,7 +417,7 @@ static void var(TreeNode* nodePtr, int rlval) {
 /* 21. simpExp -> addExp relop addExp | addExp */
 /* 22. relop -> '<=' | '<' | '>' | '>=' | '==' | '!=' */
 static void simpleExp(TreeNode* nodePtr) {
-    if (nodePtr->kind == simpExp1) {
+    if (nodePtr->kind == simpExpRelop) {
       additiveExp(nodePtr->ptr1);   // Output code for addExpNormal (ans in ac0)
       push(ac0,"");                 // Save 1st operand
       additiveExp(nodePtr->ptr3);   // Output code for addExpTerm (ans in ac0)
@@ -487,7 +487,7 @@ static void simpleExp(TreeNode* nodePtr) {
       emitBackup(uncndJumpLoc);             // Fill in jump to end instr
       emitRMAbs("JEQ",ac1,endLoc,""); // Jump to end
       emitRestore();
-    } else //if (nodePtr->kind == simpExp2)
+    } else //if (nodePtr->kind == simpExpAdditive)
       additiveExp(nodePtr->ptr1);   // Output code for addExp
 }
 

@@ -87,8 +87,8 @@ void printNodeType(TreeNode* node) {
   case varArray:
     type = "var";
     break;
-  case simpExp1:
-  case simpExp2:
+  case simpExpRelop:
+  case simpExpAdditive:
     type = "sxp";
     break;
   case relopLE:

@@ -25,7 +25,7 @@ typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varD
       stmtListNormal, stmtListVoid, funStmt1,
       stmtExp, stmtComp, stmtSel, stmtWhile, stmtJump, stmtRet, expStmtNormal, expStmtVoid, selStmtIf,
       selStmtIfElse, whileStmtNormal, jumpStmtBreak, jumpStmtContinue, retStmtVoid, retStmtExp, expAssign, expSimple, varSingle, varArray,
-      simpExp1, simpExp2, relopLE, relopLT, relopGT, relopGE, relopEQ,
+      simpExpRelop, simpExpAdditive, relopLE, relopLT, relopGT, relopGE, relopEQ,
       relopNE, addExpNormal, addExpTerm, addop, subop, termNormal, termFactor, mulopMult,
       mulopDiv, factorExp, factorVar, factorCall, factorNum, factorFloat, call1, argsNormal, argsVoid,
       argListNormal, argListSingle} nodekind_t;
@@ -141,6 +141,7 @@ extern void emitRO(char* op, int r, int s, int t, char* c);
 extern void emitRM(char* op, int r, int d, int s, char* c);
 extern void emitFloatSet(int reg, float value);
 extern void emitRMAbs( char* op, int r, int a, char*  c);
+extern void emitSelStmt(int relop, int reg, int loc);
 extern void push(int reg, char* comm) ;
 extern void pop(int reg, char* comm);
 

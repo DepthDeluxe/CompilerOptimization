@@ -475,7 +475,7 @@ static void var(TreeNode* nodePtr, int rlval) {
 /* 21. simpExp -> addExp relop addExp | addExp */
 /* 22. relop -> '<=' | '<' | '>' | '>=' | '==' | '!=' */
 static void simpleExp(TreeNode* nodePtr) {
-    if (nodePtr->kind == simpExp1) {
+    if (nodePtr->kind == simpExpRelop) {
     additiveExp(nodePtr->ptr1);           // Check addExpNormal code
     additiveExp(nodePtr->ptr3);           // Check addExp2 code
 
@@ -486,7 +486,7 @@ static void simpleExp(TreeNode* nodePtr) {
         fprintf(stderr, "unknown relational operator.\n");
     }
 
-    } else //if (nodePtr->kind == simpExp2)
+    } else //if (nodePtr->kind == simpExpAdditive)
     additiveExp(nodePtr->ptr1);           // Check addExp code
 }
 
