@@ -231,37 +231,37 @@ static void compoundStmt(TreeNode* nodePtr) {
 /* 16. selStmt -> if '(' exp ')' stmt | if '(' exp ')' stmt else stmt */
 /* 16a. e_selStmt -> if '(' exp ')' e_stmt else stmt */
 static void selectionStmt(TreeNode* nodePtr) {
-    int loc, loc2, loc3, loc4;
+    int startLoc, elseLoc, endIfLoc, endLoc;
     if (nodePtr->kind == selStmtIf) {
       expression(nodePtr->ptr1, 0);     // Output exp code
-      loc = emitSkip(1);             // Save space for "if" test
+      startLoc = emitSkip(1);             // Save space for "if" test
       statement(nodePtr->ptr2);      // Output stmt code
 
-      loc2 = emitSkip(0);            // Get jump destination (end)
-      emitBackup(loc);               // Backup numbering to "if" test
-      emitRMAbs("JEQ",ac0,loc2,
+      endLoc = emitSkip(0);            // Get jump destination (end)
+      emitBackup(startLoc);               // Backup numbering to "if" test
+      emitRMAbs("JEQ",ac0,endLoc,
           "  if test: Jump to end if false (exp == 0)");
       emitRestore();                 // Restore numbering
     } else { //if (nodePtr->kind == selStmtIfElse)
 
       expression(nodePtr->ptr1, 0);        // Output exp code
-      loc = emitSkip(1);                // Skip jump1 loc
+      startLoc = emitSkip(1);                // Skip jump1 loc
       statement(nodePtr->ptr2);         // Output stmtExp code
 
       emitRM("LDC",ac0,0,0,
              "  if: Put a 0 in ac0 so we jump over the else part");
-      loc2 = emitSkip(1);               // Skip jump2 loc
-      loc3 = emitSkip(0);               // Get jump1 destination (else)
+      endIfLoc = emitSkip(1);               // Skip jump2 loc
+      elseLoc = emitSkip(0);               // Get jump1 destination (else)
       statement(nodePtr->ptr3);         // Output stmtComp code
-      loc4 = emitSkip(0);               // Get jump2 destination (end)
+      endLoc = emitSkip(0);               // Get jump2 destination (end)
 
-      emitBackup(loc);                  // Go back to jump1 loc
-      emitRMAbs("JEQ",ac0,loc3,
+      emitBackup(startLoc);                  // Go back to jump1 loc
+      emitRMAbs("JEQ",ac0,elseLoc,
           "  if: Jump to else part if test is false (exp == 0)");
       emitRestore();                    // Restore instr counter to else
 
-      emitBackup(loc2);                 // Go back to jump2 loc
-      emitRMAbs("JEQ",ac0,loc4,"  if: Jump to the end");     // Jump to end
+      emitBackup(endIfLoc);                 // Go back to jump2 loc
+      emitRMAbs("JEQ",ac0,endLoc,"  if: Jump to the end");     // Jump to end
       emitRestore();                    // Restore instr counter to end
     }
 }
