@@ -25,9 +25,9 @@ static void selectionStmt(TreeNode* nodePtr);
 static void whileStmt(TreeNode* nodePtr);
 static void jumpStmt(TreeNode* nodePtr);
 static void returnStmt(TreeNode* nodePtr);
-static void expression(TreeNode* nodePtr);
+static void expression(TreeNode* nodePtr, int noJump);
 static void var(TreeNode* nodePtr, int rlval);
-static void simpleExp(TreeNode* nodePtr);
+static void simpleExp(TreeNode* nodePtr, int noJump);
 static void additiveExp(TreeNode* nodePtr);
 static void term(TreeNode* nodePtr);
 static void factor(TreeNode* nodePtr);
@@ -216,7 +216,7 @@ static void statement(TreeNode* nodePtr) {
 /* 14. expStmt -> exp ';' | ';' */
 static void expressionStmt(TreeNode* nodePtr) {
     if (nodePtr->kind == expStmtNormal)
-      expression(nodePtr->ptr1);        // Output code for exp
+      expression(nodePtr->ptr1, 0);        // Output code for exp
     //else if (nodePtr->kind == expStmtVoid) // No code to generate
 }
 
@@ -233,7 +233,7 @@ static void compoundStmt(TreeNode* nodePtr) {
 static void selectionStmt(TreeNode* nodePtr) {
     int loc, loc2, loc3, loc4;
     if (nodePtr->kind == selStmtIf) {
-      expression(nodePtr->ptr1);     // Output exp code
+      expression(nodePtr->ptr1, 0);     // Output exp code
       loc = emitSkip(1);             // Save space for "if" test
       statement(nodePtr->ptr2);      // Output stmt code
 
@@ -244,7 +244,7 @@ static void selectionStmt(TreeNode* nodePtr) {
       emitRestore();                 // Restore numbering
     } else { //if (nodePtr->kind == selStmtIfElse)
 
-      expression(nodePtr->ptr1);        // Output exp code
+      expression(nodePtr->ptr1, 0);        // Output exp code
       loc = emitSkip(1);                // Skip jump1 loc
       statement(nodePtr->ptr2);         // Output stmtExp code
 
@@ -275,7 +275,7 @@ static void whileStmt( TreeNode* nodePtr ) {
   whileConditionalLocation = startLoc;
 
   // emit the expression
-  expression( nodePtr->ptr1 );
+  expression( nodePtr->ptr1, 0 );
 
   int cndJmpLoc = emitSkip(1);
   whileJumpLocation = cndJmpLoc;
@@ -322,29 +322,29 @@ static void returnStmt(TreeNode* nodePtr) {
     if (nodePtr->kind == retStmtVoid) {
       emitRM("LD",pc,-1,fp,"Returning (end of function)");   // return. set PC
     } else { //if (nodePtr->kind == retStmtExp)
-      expression(nodePtr->ptr1);       // Output exp code (ans in ac0)
+      expression(nodePtr->ptr1, 0);       // Output exp code (ans in ac0)
       emitRM("LD",pc,-1,fp,"Returning (end of function)");  // return. set PC
     }
 }
 
 /* 19. exp -> var '=' exp | simpExp */
-static void expression(TreeNode* nodePtr) {
+static void expression(TreeNode* nodePtr, int noJump) {
     if (nodePtr->kind == expAssign) {
       // don't push to the stack if there is a single var
       // can just do operation in-place
       if ( nodePtr->ptr1->kind == varSingle ) {
-        expression(nodePtr->ptr2);         // Output exp code (ans in ac0)
+        expression(nodePtr->ptr2, 0);         // Output exp code (ans in ac0)
         var(nodePtr->ptr1, 0);             // Output var code (addr in ac1)
         emitRM("ST",ac0,0,ac1,"  assignment: variable = dMem[ac1] = value");
       } else {
-        expression(nodePtr->ptr2);         // Output exp code (ans in ac0)
+        expression(nodePtr->ptr2, 0);         // Output exp code (ans in ac0)
         push(ac0,"  assignment: save value");
         var(nodePtr->ptr1, 0);             // Output var code (addr in ac1)
         pop(ac0,"  assignment: retrieve value");
         emitRM("ST",ac0,0,ac1,"  assignment: variable = dMem[ac1] = value");
       }
     } else //if (nodePtr->kind == expSimple) {
-      simpleExp(nodePtr->ptr1);
+      simpleExp(nodePtr->ptr1, noJump);
 }
 
 /* 20. var -> ID | ID '[' exp ']' */
@@ -378,7 +378,7 @@ static void var(TreeNode* nodePtr, int rlval) {
     }
   } else { //if (nodePtr->kind == varArray)
 
-    expression(nodePtr->ptr1);          // Output exp code
+    expression(nodePtr->ptr1, 0);          // Output exp code
 
     loc = emitSkip(1);                  // Jump if subscript legal
     emitRO("HALT",0,0,0,"  variable: Stop. Neg subscripts illegal.");        // Stop. Neg subscripts illegal.
@@ -416,7 +416,7 @@ static void var(TreeNode* nodePtr, int rlval) {
 
 /* 21. simpExp -> addExp relop addExp | addExp */
 /* 22. relop -> '<=' | '<' | '>' | '>=' | '==' | '!=' */
-static void simpleExp(TreeNode* nodePtr) {
+static void simpleExp(TreeNode* nodePtr, int noJump) {
     if (nodePtr->kind == simpExpRelop) {
       additiveExp(nodePtr->ptr1);   // Output code for addExpNormal (ans in ac0)
       push(ac0,"");                 // Save 1st operand
@@ -425,6 +425,12 @@ static void simpleExp(TreeNode* nodePtr) {
 
       // subtract the two exps to compare them
       emitRO("SUB",ac0,ac1,ac0,""); // ac0 = addExpNormal - addExpTerm
+
+      // if noJump flag is on, don't emit jumping code to properly set ac0
+      // this is used for sel stmts and while loops to reduce num instructions
+      if ( noJump ) {
+          return;
+      }
 
       // assumptions
       // False: LT, GT, EQ, NE
@@ -532,7 +538,7 @@ static void term(TreeNode* nodePtr) {
 /* 27. factor -> '(' exp ')' | var | call | NUM | FNUM */
 static void factor(TreeNode* nodePtr) {
     if (nodePtr->kind == factorExp)
-      expression(nodePtr->ptr1);           // Output exp code (ans in ac0)
+      expression(nodePtr->ptr1, 0);           // Output exp code (ans in ac0)
     else if (nodePtr->kind == factorVar)
       var(nodePtr->ptr1,1);                // Output var code (rvalue in ac0)
     else if (nodePtr->kind == factorCall)
@@ -572,11 +578,11 @@ static void args(TreeNode* nodePtr) {
 /* 30. argList -> exp ',' argList | exp */
 static void argList(TreeNode* nodePtr) {
     if (nodePtr->kind == argListNormal) {
-      expression(nodePtr->ptr1);           // Output exp code
+      expression(nodePtr->ptr1, 0);           // Output exp code
       push(ac0,"");
       argList(nodePtr->ptr2);              // Output arglist code
     } else { //if (nodePtr->kind == argListSingle)
-      expression(nodePtr->ptr1);           // Output exp code
+      expression(nodePtr->ptr1, 0);           // Output exp code
       push(ac0,"");
     }
 }
