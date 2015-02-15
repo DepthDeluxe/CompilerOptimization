@@ -233,18 +233,23 @@ static void compoundStmt(TreeNode* nodePtr) {
 static void selectionStmt(TreeNode* nodePtr) {
     int startLoc, elseLoc, endIfLoc, endLoc;
     if (nodePtr->kind == selStmtIf) {
-      expression(nodePtr->ptr1, 0);     // Output exp code
+      expression(nodePtr->ptr1, 1);     // Output exp code
       startLoc = emitSkip(1);             // Save space for "if" test
       statement(nodePtr->ptr2);      // Output stmt code
 
       endLoc = emitSkip(0);            // Get jump destination (end)
       emitBackup(startLoc);               // Backup numbering to "if" test
-      emitRMAbs("JEQ",ac0,endLoc,
-          "  if test: Jump to end if false (exp == 0)");
+      TreeNode* expStmtNode = nodePtr->ptr1;
+      TreeNode* simpExpNode = expStmtNode->ptr1;
+      if ( simpExpNode->kind == simpExpRelop ) {
+        emitOppositeSelStmt(simpExpNode->ptr2->kind, ac0, endLoc);
+      } else {
+        emitRMAbs("JEQ",ac0,endLoc,"  testts");     // Jump to end
+      }
       emitRestore();                 // Restore numbering
     } else { //if (nodePtr->kind == selStmtIfElse)
 
-      expression(nodePtr->ptr1, 0);        // Output exp code
+      expression(nodePtr->ptr1, 1);        // Output exp code
       startLoc = emitSkip(1);                // Skip jump1 loc
       statement(nodePtr->ptr2);         // Output stmtExp code
 
@@ -256,8 +261,13 @@ static void selectionStmt(TreeNode* nodePtr) {
       endLoc = emitSkip(0);               // Get jump2 destination (end)
 
       emitBackup(startLoc);                  // Go back to jump1 loc
-      emitRMAbs("JEQ",ac0,elseLoc,
-          "  if: Jump to else part if test is false (exp == 0)");
+      TreeNode* expStmtNode = nodePtr->ptr1;
+      TreeNode* simpExpNode = expStmtNode->ptr1;
+      if ( simpExpNode->kind == simpExpRelop ) {
+        emitOppositeSelStmt(simpExpNode->ptr2->kind, ac0, elseLoc);
+      } else {
+        emitRMAbs("JEQ",ac0, elseLoc,"  testts");     // Jump to end
+      }
       emitRestore();                    // Restore instr counter to else
 
       emitBackup(endIfLoc);                 // Go back to jump2 loc
@@ -429,7 +439,8 @@ static void simpleExp(TreeNode* nodePtr, int noJump) {
       // if noJump flag is on, don't emit jumping code to properly set ac0
       // this is used for sel stmts and while loops to reduce num instructions
       if ( noJump ) {
-          return;
+        fprintf(stderr, "no jumping this time");
+        return;
       }
 
       // assumptions

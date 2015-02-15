@@ -141,7 +141,7 @@ extern void emitRO(char* op, int r, int s, int t, char* c);
 extern void emitRM(char* op, int r, int d, int s, char* c);
 extern void emitFloatSet(int reg, float value);
 extern void emitRMAbs( char* op, int r, int a, char*  c);
-extern void emitSelStmt(int relop, int reg, int loc);
+extern void emitOppositeSelStmt(int relop, int reg, int loc);
 extern void push(int reg, char* comm) ;
 extern void pop(int reg, char* comm);
 
