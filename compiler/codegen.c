@@ -2,6 +2,7 @@
 //#include <stdlib.h> // atoi, atof, malloc, sizeof, ...
 //#include <string.h> // c-string (char *) functions
 #include "compiler.h"
+#include "support.h"
 
 // Headers for all functions in this file.
 // static means the function cannot be used outside of this file

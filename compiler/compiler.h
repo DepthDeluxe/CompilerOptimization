@@ -132,19 +132,6 @@ extern Scope*     newScope();
 // Semantic checker support functions
 extern void semanticCheck(TreeNode* nodePtr);
 
-// Code Generation support functions
-extern int  emitSkip(int howMany);
-extern void emitBackup(int loc);
-extern void emitRestore(void);
-extern void emitComment(char*  c);
-extern void emitRO(char* op, int r, int s, int t, char* c);
-extern void emitRM(char* op, int r, int d, int s, char* c);
-extern void emitFloatSet(int reg, float value);
-extern void emitRMAbs( char* op, int r, int a, char*  c);
-extern void emitOppositeSelStmt(int relop, int reg, int loc);
-extern void push(int reg, char* comm) ;
-extern void pop(int reg, char* comm);
-
 // For debugging purposes
 #define _test(a,b)  if (NULL==a) fprintf(stderr, "ACCESSING NULL %s\n", b);
 
