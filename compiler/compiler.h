@@ -112,25 +112,6 @@ extern SymbolTable   symTabPtr;
 extern ParseTree     parseTreePtr;
 extern int           lineno;
 
-// Semantic checking support functions
-extern SemRec*    lookup(int line, SymbolTable scopePtr, char* theName);
-extern void       insert(int line, SymbolTable scopePtr, char* theName,
-			 SemRec* theRec);
-extern void       beginScope();
-extern void       endScope();
-
-extern void       upScope();
-extern void       downScope();
-
-extern char*      myalloc(size_t size);
-extern TreeNode*  newParseTreeNode();
-extern SemRec*    newSemRec();
-extern HashNode*  newHTableNode();
-extern HashTable* newHashTable();
-extern Scope*     newScope();
-
-// Semantic checker support functions
-extern void semanticCheck(TreeNode* nodePtr);
 
 // For debugging purposes
 #define _test(a,b)  if (NULL==a) fprintf(stderr, "ACCESSING NULL %s\n", b);

@@ -5,6 +5,25 @@
 void printNodeType(TreeNode* node);
 void printNode(TreeNode* node_ptr, GList* parent_stack);
 
+// Semantic checking support functions
+extern SemRec*    lookup(int line, SymbolTable scopePtr, char* theName);
+extern void       insert(int line, SymbolTable scopePtr, char* theName, SemRec* theRec);
+extern void       beginScope();
+extern void       endScope();
+
+extern void       upScope();
+extern void       downScope();
+
+extern char*      myalloc(size_t size);
+extern TreeNode*  newParseTreeNode();
+extern SemRec*    newSemRec();
+extern HashNode*  newHTableNode();
+extern HashTable* newHashTable();
+extern Scope*     newScope();
+
+// Semantic checker support functions
+extern void semanticCheck(TreeNode* nodePtr);
+
 // Code Generation support functions
 int  emitSkip(int howMany);
 void emitBackup(int loc);
