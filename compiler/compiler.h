@@ -112,7 +112,6 @@ extern SymbolTable   symTabPtr;
 extern ParseTree     parseTreePtr;
 extern int           lineno;
 
-
 // For debugging purposes
 #define _test(a,b)  if (NULL==a) fprintf(stderr, "ACCESSING NULL %s\n", b);
 

@@ -47,7 +47,7 @@ nodekind_t whileConditionalType;
 /*                                                                          */
 /****************************************************************************/
 void generateCode(TreeNode* nodePtr) {
-    program(nodePtr);
+  program(nodePtr);
 }
 
 /* 1. prog -> declList */
