@@ -1,4 +1,6 @@
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <glib.h>
 
 #include "support.h"
@@ -450,3 +452,84 @@ HashTable* newHashTable() {
      return temp;
 }
 
+//////////////////////////////////////////
+//  TM Instruction support functions
+//////////////////////////////////////////
+GHashTable* instructionTable;
+
+// initialized the codegen part
+void codegenSupportInit() {
+  instructionTable = g_hash_table_new(g_int_hash, tmComparisonFunction);
+}
+
+// writes an instruction to the hash table
+void writeInstruction(GHashTable* ht, int loc, TMInstruction i) {
+  // first copy the instruction contents onto the heap
+  TMInstruction* heapI = calloc(1, sizeof(TMInstruction));
+  strcpy(heapI->opCode, i.opCode);
+  heapI->a = i.a;
+  heapI->b = i.b;
+  heapI->c = i.c;
+  heapI->comment = calloc(strlen(i.comment)+1, sizeof(char));
+  strcpy(heapI->comment, i.comment);
+
+  // add to the hash table
+  g_hash_table_replace( instructionTable, &loc, heapI );
+}
+
+// performs a lookup on the instruction
+TMInstruction* lookupInstruction(GHashTable* ht, int label) {
+  gpointer inst = g_hash_table_lookup(ht, &label);
+
+  return (TMInstruction*)inst;
+}
+
+// prints out a single instruction
+void printInstruction(int label, TMInstruction* i) {
+  printf("%*d: %*s  %d,%d(%d)\t\t%s\n", 4, label,
+                                        3, i->opCode,
+                                        i->a, i->b, i->c,
+                                        i->comment
+      );
+}
+
+// prints out the entire instruction table
+void printInstructionTable(GHashTable* ht) {
+  GList* keys = g_hash_table_get_keys(ht);
+  GList* curKey = keys;
+  while ( curKey != NULL ) {
+    int label = (int)*((int*)curKey->data);
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(ht, &label);
+    printInstruction(label, inst);
+
+    curKey = curKey->next;
+  }
+}
+
+int tmComparisonFunction(gconstpointer a, gconstpointer b) {
+    TMInstruction* aInstruction = (TMInstruction*)a;
+    TMInstruction* bInstruction = (TMInstruction*)b;
+
+    // compare the op codes
+    if ( strcmp(aInstruction->opCode, bInstruction->opCode) != 0 ) {
+      return FALSE;
+    }
+
+    // compare the instruction codes
+    if ( aInstruction->a != bInstruction->a ) {
+      return FALSE;
+    }
+    if ( aInstruction->b != bInstruction->b ) {
+      return FALSE;
+    }
+    if ( aInstruction->c != bInstruction->c ) {
+      return FALSE;
+    }
+
+    // compare the comments
+    if ( strcmp(aInstruction->comment, bInstruction->comment) != 0 ) {
+      return FALSE;
+    }
+
+    return TRUE;
+}

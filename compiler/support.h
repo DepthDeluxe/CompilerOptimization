@@ -37,3 +37,18 @@ void emitOppositeSelStmt(int relop, int reg, int loc);
 void push(int reg, char* comm) ;
 void pop(int reg, char* comm);
 
+// TM Instruction generation support functions
+typedef struct tminstruction {
+  char opCode[5];
+  int a,b,c;
+  char* comment;
+} TMInstruction;
+
+void codegenSupportInit();
+void writeInstruction(GHashTable* ht, int loc, TMInstruction i);
+TMInstruction* lookupInstruction(GHashTable* ht, int label);
+void printInstruction(int label, TMInstruction* i);
+void printInstructionTable(GHashTable* ht);
+
+gboolean tmComparisonFunction(gconstpointer a, gconstpointer b);
+extern GHashTable* instructionTable;
