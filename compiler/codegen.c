@@ -39,6 +39,7 @@ static void argList(TreeNode* nodePtr);
 /* evil globals, really shouldn't be using theses but IDGAF */
 int whileConditionalLocation = -1;
 int whileJumpLocation = -1;
+nodekind_t whileConditionalType;
 
 /****************************************************************************/
 /*                                                                          */
@@ -279,15 +280,22 @@ static void selectionStmt(TreeNode* nodePtr) {
 
 /* 17. whileStmt -> while '(' exp ')' stmt */
 static void whileStmt( TreeNode* nodePtr ) {
-  fprintf(stderr, "whileStmt: code generation\n");
-
   // get the start of the expression
   int startLoc = emitSkip(0);
   whileConditionalLocation = startLoc;
 
   // emit the expression
-  expression( nodePtr->ptr1, 0 );
+  expression( nodePtr->ptr1, 1 );
 
+  // store away the type of conditional
+  if ( nodePtr->ptr1->kind == expSimple &&
+       nodePtr->ptr1->ptr1->kind == simpExpRelop) {
+    whileConditionalType = nodePtr->ptr1->ptr1->ptr2->kind;
+  } else {
+    whileConditionalType = relopEQ;
+  }
+
+  // skip over the jump statement
   int cndJmpLoc = emitSkip(1);
   whileJumpLocation = cndJmpLoc;
 
@@ -302,26 +310,56 @@ static void whileStmt( TreeNode* nodePtr ) {
   // mark the end and resume to next greatest value
   int endLoc = emitSkip(0);
 
-  // back up and write the if expression
-  // JEQ to after the statement
+  // back up and write the conditional expression as the jump
+  // statement
   emitBackup(cndJmpLoc);
-  emitRMAbs("JEQ",ac0,endLoc,
-      "  if test: Jump to end if false (exp == 0)");
+  TreeNode* expStmtNode = nodePtr->ptr1;
+  TreeNode* simpExpNode = expStmtNode->ptr1;
+  if ( simpExpNode->kind == simpExpRelop ) {
+    emitOppositeSelStmt(simpExpNode->ptr2->kind, ac0, endLoc);
+  } else {
+    emitRMAbs("JEQ",ac0, endLoc,"");
+  }
   emitRestore();
 }
 
 /* 17a. jumpStmt -> break | continue */
 static void jumpStmt(TreeNode* nodePtr) {
   if ( nodePtr->kind == jumpStmtBreak ) {
-    // branch to the top conditional
-    emitRM("LDC",ac0,0,1,
-           "  if: Put a 0 in ac0 so we jump over the else part");
+    // emit the proper ac0 register set so that the conditional test at the top fails
+    switch ( whileConditionalType ) {
+    case relopLT:
+      emitRM("LDC",ac0,1,1,
+             "  if: Put a 1 in ac0 so we jump over the while loop");
+      break;
+    case relopLE:
+      emitRM("LDC",ac0,1,1,
+             "  if: Put a 1 in ac0 so we jump over the while loop");
+      break;
+    case relopGT:
+      emitRM("LDC",ac0,-1,1,
+             "  if: Put a 1 in ac0 so we jump over the while loop");
+      break;
+    case relopGE:
+      emitRM("LDC",ac0,-1,1,
+             "  if: Put a 0 in ac0 so we jump over the while loop");
+      break;
+    case relopEQ:
+      emitRM("LDC",ac0,1,1,
+             "  if: Put a 1 in ac0 so we jump over the while loop");
+      break;
+    case relopNE:
+      emitRM("LDC",ac0,0,1,
+             "  if: Put a 0 in ac0 so we jump over the while loop");
+      break;
+    default:
+      break;
+    }
     emitRM("LDC",ac1,0,0,
            "  if: Put a 0 in ac0 so we jump over the else part");
     emitRMAbs("JEQ",ac1,whileJumpLocation,"  if: Jump to the jump at top of while loop");     // Jump to the jump
   }
   else { // nodePtr->kind == jumpStmtContinue
-    // branch back to the top of the while loop
     emitRM("LDC",ac0,0,0,
            "  if: Put a 0 in ac0 so we jump over the else part");
     emitRMAbs("JEQ",ac0,whileConditionalLocation,"  if: Jump to the conditional");     // Jump to conditional
