@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "compiler.h"
+#include "support.h"
 
 // Evil (but necessary) Globals!
 SymbolTable   symTabPtr = NULL;  // Pointer to the top of the symbol table
@@ -28,10 +30,15 @@ int main(int argc, char** argv) {
 
   fprintf(stderr,"Creating parse tree...\n");
   yyparse();
+
   fprintf(stderr,"Semantic checking...\n");
   semanticCheck(parseTreePtr);
+
   fprintf(stderr,"Generating code...\n");
+  codegenSupportInit();
   generateCode(parseTreePtr);
+  printInstructionTable();
+
   fprintf(stderr,"Done!\n");
 
   return 0;

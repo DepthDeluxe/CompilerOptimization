@@ -24,16 +24,35 @@ extern Scope*     newScope();
 // Semantic checker support functions
 extern void semanticCheck(TreeNode* nodePtr);
 
+// TM Instruction generation support functions
+typedef enum {
+  HALT, IN, INF, OUT, OUTF, LD, ST, LDA, LDC, LDF,
+  ADD, SUB, MUL, DIV,
+  JEQ, JNE, JLT, JLE, JGT, JGE
+} Opcode;
+
 // Code Generation support functions
 int  emitSkip(int howMany);
 void emitBackup(int loc);
 void emitRestore(void);
-void emitComment(char*  c);
-void emitRO(char* op, int r, int s, int t, char* c);
-void emitRM(char* op, int r, int d, int s, char* c);
+void emitRO(Opcode op, int r, int s, int t, char* c);
+void emitRM(Opcode op, int r, int d, int s, char* c);
 void emitFloatSet(int reg, float value);
-void emitRMAbs( char* op, int r, int a, char*  c);
+void emitRMAbs( Opcode op, int r, int a, char*  c);
 void emitOppositeSelStmt(int relop, int reg, int loc);
 void push(int reg, char* comm) ;
 void pop(int reg, char* comm);
 
+typedef struct tminstruction {
+  Opcode opCode;
+  int a,b,c;
+  char* comment;
+} TMInstruction;
+
+void codegenSupportInit();
+void writeInstruction(int loc, TMInstruction i);
+TMInstruction* lookupInstruction(int label);
+int getASMPrintType(Opcode op);
+void printOpcode(Opcode op);
+void printInstruction(int label, TMInstruction* i);
+void printInstructionTable();

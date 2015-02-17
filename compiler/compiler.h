@@ -59,15 +59,15 @@ typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varD
  */
 typedef union {
     struct {
-	types_t kind;     // Variable type (types that aren't func)
-	int base;            // Memory location (usually fp - offset)
-	int offset;
+  types_t kind;     // Variable type (types that aren't func)
+  int base;            // Memory location (usually fp - offset)
+  int offset;
     } v;
     struct {
-	types_t kind;            // Function type (always func)
-	int addr;            // Memory location where the code is stored
-	int numParams;       // Number of parameters
-	int localSpace;      // Space for local variables
+  types_t kind;            // Function type (always func)
+  int addr;            // Memory location where the code is stored
+  int numParams;       // Number of parameters
+  int localSpace;      // Space for local variables
     } f;
 } SemRec;
 
@@ -111,8 +111,6 @@ typedef struct pnode {
 extern SymbolTable   symTabPtr;
 extern ParseTree     parseTreePtr;
 extern int           lineno;
-
-
 // For debugging purposes
 #define _test(a,b)  if (NULL==a) fprintf(stderr, "ACCESSING NULL %s\n", b);
 
