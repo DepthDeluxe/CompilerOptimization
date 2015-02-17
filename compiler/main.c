@@ -30,11 +30,15 @@ int main(int argc, char** argv) {
 
   fprintf(stderr,"Creating parse tree...\n");
   yyparse();
+
   fprintf(stderr,"Semantic checking...\n");
   semanticCheck(parseTreePtr);
+
   fprintf(stderr,"Generating code...\n");
   codegenSupportInit();
   generateCode(parseTreePtr);
+  printInstructionTable();
+
   fprintf(stderr,"Done!\n");
 
   return 0;
