@@ -1,0 +1,26 @@
+Redundant TMA
+
+Name    Description                   Before        After
+----------------------------------------------------------
+LDST    Load and immediately store    LD a,b(c)     NOP
+                                      ST a,b(c)     LD a,b(c)
+
+STLD    Store then load               ST a,b(X)     ST a,b(X)
+                                      LD a,b(X)     NOP
+
+ADDSUB  Add then subtract             ADD a,a,b     NOP
+                                      SUB a,a,b     NOP
+
+SUBADD  Subtract then add             SUB a,a,b     NOP
+                                      ADD a,a,b     NOP
+
+MULDIV  Multiply then divide          MUL a,a,b     NOP
+                                      DIV a,a,b     NOP
+
+DIVMUL  Divide then multiply          DIV a,a,b     NOP
+                                      MUL a,a,b     NOP
+
+LDNULL  Load same register to itself  LDA a,0(a)    NOP
+
+DUP     Duplicate instruction         ADD/SUB/MUL/DIV/LDA/LDC a,b,c     "
+                                      "                                 NOP
