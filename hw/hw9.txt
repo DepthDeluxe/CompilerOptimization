@@ -1,0 +1,21 @@
+1.
+
+A push can occur in codegen.c at:
+  program()
+  expression()
+  simpExp()
+  additiveExp()
+  term()
+  call()
+  argList()
+
+A pop can occur in codegen.c at:
+  expression()
+  simpExp()
+  additiveExp()
+  term()
+
+2. Redundant push/pop situations
+  * push a register and immediately pop the value
+  * push a register and never use the value it holds again
+  * push a register and the program goes out of the current scope
