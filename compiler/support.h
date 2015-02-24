@@ -56,3 +56,14 @@ int getASMPrintType(Opcode op);
 void printOpcode(Opcode op);
 void printInstruction(int label, TMInstruction* i);
 void printInstructionTable();
+
+// code profiler and optimizer
+void profileLDST();
+void profileSTLD();
+void profileADDSUB();
+void profileMULDIV();
+void profileDIVMUL();
+void profileLDNULL();
+void profileDUP();
+
+void profile();

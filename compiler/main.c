@@ -39,6 +39,9 @@ int main(int argc, char** argv) {
   generateCode(parseTreePtr);
   printInstructionTable();
 
+  fprintf(stderr, "Profiling...\n");
+  profile();
+
   fprintf(stderr,"Done!\n");
 
   return 0;

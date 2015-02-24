@@ -627,3 +627,270 @@ void printInstructionTable(GHashTable* ht) {
   }
 }
 
+/*
+ * Code Profiler
+ */
+
+void profileLDST() {
+  int state = 0;
+  int numIdentified = 0;
+  int a,b,c;
+  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+    switch( state ) {
+    case 0:
+      if ( inst->opCode == LD ) {
+        a = inst->a;
+        b = inst->b;
+        c = inst->c;
+
+        state = 1;
+      } else {
+        state = 0;
+      }
+      break;
+    case 1:
+      if ( inst->opCode == ST &&
+           inst->a == a &&
+           inst->b == b &&
+           inst->c == c ) {
+        numIdentified++;
+      }
+      state = 0;
+    }
+  }
+
+  fprintf(stderr, "LDST: %i\n", numIdentified);
+}
+
+void profileSTLD() {
+  int state = 0;
+  int numIdentified = 0;
+  int a,b,c;
+  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+    switch( state ) {
+    case 0:
+      if ( inst->opCode == ST ) {
+        a = inst->a;
+        b = inst->b;
+        c = inst->c;
+
+        state = 1;
+      } else {
+        state = 0;
+      }
+      break;
+    case 1:
+      if ( inst->opCode == LD &&
+           inst->a == a &&
+           inst->b == b &&
+           inst->c == c ) {
+        numIdentified++;
+      }
+      state = 0;
+    }
+  }
+
+  fprintf(stderr, "STLD: %i\n", numIdentified);
+}
+
+void profileADDSUB() {
+  int state = 0;
+  int numIdentified = 0;
+  int X,Y;
+  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+    switch( state ) {
+    case 0:
+      if ( inst->opCode == ADD &&
+           inst->a == inst->b ) {
+        X = inst->a;
+        Y = inst->c;
+
+        state = 1;
+      } else {
+        state = 0;
+      }
+      break;
+    case 1:
+      if ( inst->opCode == SUB &&
+           inst->a == X &&
+           inst->b == X &&
+           inst->c == Y ) {
+        numIdentified++;
+      }
+      state = 0;
+    }
+  }
+
+  fprintf(stderr, "ADDSUB: %i\n", numIdentified);
+}
+
+void profileSUBADD() {
+  int state = 0;
+  int numIdentified = 0;
+  int X,Y;
+  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+    switch( state ) {
+    case 0:
+      if ( inst->opCode == SUB &&
+           inst->a == inst->b ) {
+        X = inst->a;
+        Y = inst->c;
+
+        state = 1;
+      } else {
+        state = 0;
+      }
+      break;
+    case 1:
+      if ( inst->opCode == ADD &&
+           inst->a == X &&
+           inst->b == X &&
+           inst->c == Y ) {
+        numIdentified++;
+      }
+      state = 0;
+    }
+  }
+
+  fprintf(stderr, "ADDSUB: %i\n", numIdentified);
+}
+
+void profileMULDIV() {
+  int state = 0;
+  int numIdentified = 0;
+  int X,Y;
+  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+    switch( state ) {
+    case 0:
+      if ( inst->opCode == MUL &&
+           inst->a == inst->b ) {
+        X = inst->a;
+        Y = inst->c;
+
+        state = 1;
+      } else {
+        state = 0;
+      }
+      break;
+    case 1:
+      if ( inst->opCode == DIV &&
+           inst->a == X &&
+           inst->b == X &&
+           inst->c == Y ) {
+        numIdentified++;
+      }
+      state = 0;
+    }
+  }
+
+  fprintf(stderr, "MULDIV: %i\n", numIdentified);
+}
+
+void profileDIVMUL() {
+  int state = 0;
+  int numIdentified = 0;
+  int X,Y;
+  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+    switch( state ) {
+    case 0:
+      if ( inst->opCode == DIV &&
+           inst->a == inst->b ) {
+        X = inst->a;
+        Y = inst->c;
+
+        state = 1;
+      } else {
+        state = 0;
+      }
+      break;
+    case 1:
+      if ( inst->opCode == MUL &&
+           inst->a == X &&
+           inst->b == X &&
+           inst->c == Y ) {
+        numIdentified++;
+      }
+      state = 0;
+    }
+  }
+
+  fprintf(stderr, "DIVMUL: %i\n", numIdentified);
+}
+
+void profileLDNULL() {
+  int numIdentified = 0;
+  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+    if ( inst->opCode == LD &&
+         inst->a == inst->c &&
+         inst->b == 0 ) {
+      numIdentified++;
+    }
+  }
+
+  fprintf(stderr, "LDNULL: %i\n", numIdentified);
+}
+
+void profileDUP() {
+  int state = 0;
+  int numIdentified = 0;
+  int X;
+  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+
+    // check for a valid operation
+    int validOp = 0;
+    switch( inst->opCode ) {
+    case ADD:
+    case SUB:
+    case MUL:
+    case DIV:
+    case LDA:
+    case LDC:
+      validOp = 1;
+      break;
+    default:
+      break;
+    }
+
+    // break out if the instruction didn't match
+    if ( !validOp ) {
+      state = 0;
+      break;
+    }
+
+    // transition states
+    switch( state ) {
+    case 0:
+      X = inst->a;
+      state = 1;
+      break;
+    case 1:
+      if ( inst->a == X ) {
+        numIdentified++;
+      }
+      state = 0;
+    }
+  }
+
+  fprintf(stderr, "DUP: %i\n", numIdentified);
+}
+
+void profile() {
+  fprintf(stderr, "Profile Results ======\n");
+  profileLDST();
+  profileSTLD();
+  profileADDSUB();
+  profileSUBADD();
+  profileMULDIV();
+  profileDIVMUL();
+  profileLDNULL();
+  profileDUP();
+  fprintf(stderr, "======================\n");
+}
