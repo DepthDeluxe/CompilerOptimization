@@ -60,6 +60,8 @@ void printInstructionTable();
 // code profiler and optimizer
 void profileLDST();
 void profileSTLD();
+void profileSTST();
+void profileLDLD();
 void profileADDSUB();
 void profileMULDIV();
 void profileDIVMUL();
