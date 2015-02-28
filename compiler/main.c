@@ -22,9 +22,13 @@ void generateCode(TreeNode* nodePt);
 int main(int argc, char** argv) {
   // parse the command line options
   with_float = 0;
+  int with_profile = 0;
   for (int n = 1; n < argc; n++) {
     if ( strcmp(argv[n], "-f") == 0 ) {
       with_float = 1;
+    }
+    if ( strcmp(argv[n], "-p") == 0 ) {
+      with_profile = 1;
     }
   }
 
@@ -39,8 +43,10 @@ int main(int argc, char** argv) {
   generateCode(parseTreePtr);
   printInstructionTable();
 
-  fprintf(stderr, "Profiling...\n");
-  profile();
+  if ( with_profile ) {
+    fprintf(stderr, "Profiling...\n");
+    profile();
+  }
 
   fprintf(stderr,"Done!\n");
 

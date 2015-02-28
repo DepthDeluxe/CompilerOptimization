@@ -299,13 +299,30 @@ void emitRMAbs( Opcode op, int r, int a, char * c){
 // Shortcuts (code by Jay Aslam)
 
 void push(int reg, char *comm) {
-  emitRM(ST,reg,0,sp,comm);
-  emitRM(LDA,sp,-1,sp,"");
+  // ensure push starts with PUSH comment
+  char* full_comment = calloc(strlen(comm)+7, sizeof(char));
+  strcat(full_comment, "PUSH: ");
+  strcat(full_comment, comm);
+
+  // emit instructions
+  emitRM(ST, reg, 0, sp, full_comment);
+  emitRM(LDA, sp, -1, sp, full_comment);
+
+  free(full_comment);
 }
 
 void pop(int reg, char *comm) {
-  emitRM(LDA,sp,1,sp,comm);
-  emitRM(LD,reg,0,sp,"");
+  // ensure push starts with PUSH comment
+  char* full_comment = calloc(strlen(comm)+6, sizeof(char));
+  strcat(full_comment, "POP: ");
+  strcat(full_comment, comm);
+
+  fprintf(stderr, full_comment);
+
+  emitRM(LDA, sp, 1, sp, full_comment);
+  emitRM(LD, reg, 0, sp, full_comment);
+
+  free(full_comment);
 }
 
 void emitOppositeSelStmt(int relop, int reg, int loc) {
@@ -927,8 +944,88 @@ void profileDUP() {
   fprintf(stderr, "DUP: %i\n", numIdentified);
 }
 
+// reutrns the number of unnecessary instructions
+int _pushpopLookAhead(int start, int X, int* end) {
+  int numIdentified = 0;
+  int i;
+  for ( i = start; i < g_hash_table_size(instructionTable); i++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &i);
+
+    // if the a param is X, then investigate
+    if ( inst->a == X ) {
+      // if "POP: ", then we are done
+      // if some other assignment instruction, then we needed
+      // to push that variable to the stack
+      int compare = strncmp("POP: ", inst->comment, 5);
+      if ( compare == 0 ) {
+        numIdentified++;
+        break;
+      } else {
+        // only some statements really do assigning, if one of those
+        // statements, then return 0
+        int shouldBreak = 0;
+        switch ( inst->opCode ) {
+        case IN:
+        case LD:
+        case LDA:
+        case LDC:
+        case ADD:
+        case SUB:
+        case MUL:
+        case DIV:
+          shouldBreak = 1;
+          break;
+        default:
+          break;
+        }
+
+        if ( shouldBreak ) {
+          break;
+        }
+      }
+
+    }
+
+    // look for more push instructions, move i to the end of the function
+    int compare = strncmp("PUSH: ", inst->comment, 5);
+    if ( compare == 0 ) {
+      int numIdentifiedInFn = _pushpopLookAhead(i+1, inst->a, &i);
+      numIdentified += numIdentifiedInFn;
+    }
+  }
+
+  // write the value for the end
+  *end = i;
+  return numIdentified;
+}
+
+// profiles the PUSH and POP operations, checks to see if we are pushing
+// something that never gets assigned to before we pop.
+void profilePUSHPOP() {
+  int state = 0;
+  int numIdentified = 0;
+  int X;
+  for ( int i = 0; i < g_hash_table_size(instructionTable); i++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &i);
+
+    int compare = strncmp("PUSH: ", inst->comment, 6);
+    if ( compare == 0 ) {
+      // pick up the stored value
+      X = inst->a;
+
+      // keep looking until we pop that value to make sure
+      // we aren't reassigning
+      int numIdentifiedInFn = _pushpopLookAhead(i, X, &i);
+      numIdentified += numIdentifiedInFn;
+    }
+  }
+
+  fprintf(stderr, "PUSHPOP: %i\n", numIdentified);
+}
+
 void profile() {
   fprintf(stderr, "Profile Results ======\n");
+
   profileLDST();
   profileSTLD();
   profileSTST();
@@ -939,5 +1036,7 @@ void profile() {
   profileDIVMUL();
   profileLDNULL();
   profileDUP();
+  profilePUSHPOP();
+
   fprintf(stderr, "======================\n");
 }

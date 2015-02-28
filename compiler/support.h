@@ -67,5 +67,6 @@ void profileMULDIV();
 void profileDIVMUL();
 void profileLDNULL();
 void profileDUP();
+void profilePUSHPOP();
 
 void profile();
