@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # builds the compiler and check
 build_compiler() {
   # build the compiler with GCC since this is
@@ -41,11 +43,13 @@ build_programs() {
 }
 
 run_programs() {
+  debug='/tmp/debug.txt'
+
   # run the built programs, remove existing output
   pushd "handoutPrograms/build"
 
   test_files=$(ls -1 *.tm)
-  rm -rf "$RAW_OUTPUT"
+  rm -rf "$OUTPUT" "$PROFILE" "$debug"
 
   for file in $test_files; do
     # get the name of the file
@@ -55,20 +59,18 @@ run_programs() {
 
     # if there is a text file with the same name, pipe it into the input of the
     # program when we are running
-    prefix=""
+    redirect=""
     if [ -a "../${name}.txt" ]; then
-      prefix="echo \"../${name}.txt\" |"
+      redirect="echo \"../${name}.txt\" | "
     fi
-    $prefix ftm "./$file" >> "$RAW_OUTPUT"
+    thisOutput=$($redirect ftm "./$file")
 
-    if [ $? -ne 0 ]; then
-      echo "Error: failed to run $file!"
-      exit 3
-    fi
+    echo "$thisOutput" >>$debug
+
+    # filter out needed information from the output
+    echo "$thisOutput" | grep "OUT instruction prints" >> "$OUTPUT"
+    echo $thisOutput | egrep -o '[0-9]+ were NOPs --> [0-9]+' | sed -e 's/[^0-9 ]//g' -e 's/    /;/g' -e "s/^/$name;/" >> "$PROFILE"
   done
-
-  # only save value of text OUT
-  cat "$RAW_OUTPUT" | grep "OUT instruction prints" > "$OUTPUT"
 
   # go back out
   popd
@@ -93,6 +95,41 @@ run_rebuild() {
   cp "$OUTPUT" "$EXPECTED_OUTPUT"
 }
 
+run_profile() {
+  run_tests
+
+  oldIFS="$IFS"
+
+  # build up the profile
+  IFS=$'\n'
+  profileData=$(cat "$PROFILE")
+  profileDataArray=($profileData)
+
+  # print out header
+  printf "%-15s %-10s %-10s %-10s %-10s %-10s\n" 'program' 'before' 'after' 'nops after' 'real after' 'pct gone'
+  echo "-----------------------------------------------------------------------------"
+
+  # print out profile data for each program
+  for line in ${profileDataArray[@]}; do
+    IFS=';'
+
+    # put parameters into array
+    lineArgs=($line)
+
+    # print out the information about program
+    printf "%-15s %-10s %-10d %-10d %-10d %-10s\n" \
+      "${lineArgs[0]}" \
+      '--' \
+      "$(expr ${lineArgs[1]} + ${lineArgs[2]})" \
+      "${lineArgs[1]}" \
+      "${lineArgs[2]}" \
+      '--'
+  done
+
+  # restore the old IFS so we can keep iterating through $profileDataArray
+  IFS="$oldIFS"
+}
+
 # set the command variable
 command=""
 if [ $# -eq 0 ]; then
@@ -102,9 +139,9 @@ else
 fi
 
 # system constants
-RAW_OUTPUT="/tmp/raw-output.txt"
-OUTPUT="/tmp/output.txt"
-EXPECTED_OUTPUT="handoutPrograms/expected-output.txt"
+EXPECTED_OUTPUT='handoutPrograms/expected-output.txt'
+OUTPUT='/tmp/output.txt'
+PROFILE='/tmp/profile.txt'
 
 # run different commands depending on option
 case $command in
@@ -113,6 +150,9 @@ test)
   ;;
 rebuild)
   run_rebuild
+  ;;
+profile)
+  run_profile
   ;;
 esac
 
