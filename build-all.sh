@@ -103,7 +103,7 @@ find_orig_count() {
   IFS=$'\n'
 
   local contents=$(cat "$ORIG_FILE")
-  find_orig_count_return=""
+  find_orig_count_return="-1"
   for line in ${contents[@]}; do
     IFS=";"
 
@@ -142,14 +142,18 @@ run_profile() {
     find_orig_count_name="${lineArgs[0]}"
     find_orig_count
 
+    # compute the percentage after
+    local difference=$(expr "$find_orig_count_return" - "${lineArgs[2]}")
+    local percentage=$(echo "100 * $difference / $find_orig_count_return" | bc -l)
+
     # print out the information about program
-    printf "%-15s %-10d %-10d %-10d %-10d %-10s\n" \
+    printf "%-15s %-10d %-10d %-10d %-10d %-.2f\n" \
       "${lineArgs[0]}" \
       "$find_orig_count_return" \
       "$(expr ${lineArgs[1]} + ${lineArgs[2]})" \
       "${lineArgs[1]}" \
       "${lineArgs[2]}" \
-      '--'
+      "$percentage"
   done
 
   # restore the old IFS so we can keep iterating through $profileDataArray
