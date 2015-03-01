@@ -95,15 +95,37 @@ run_rebuild() {
   cp "$OUTPUT" "$EXPECTED_OUTPUT"
 }
 
+find_orig_count_name=""
+find_orig_count_return=""
+ORIG_FILE="./profile-original.txt"
+find_orig_count() {
+  local oldIFS="$IFS"
+  IFS=$'\n'
+
+  local contents=$(cat "$ORIG_FILE")
+  find_orig_count_return=""
+  for line in ${contents[@]}; do
+    IFS=";"
+
+    local lineArgs=($line)
+    if [ "${lineArgs[0]}" = "$find_orig_count_name" ]; then
+      find_orig_count_return="${lineArgs[1]}"
+      break
+    fi
+  done
+
+  IFS="$oldIFS"
+}
+
 run_profile() {
   run_tests
 
-  oldIFS="$IFS"
+  local oldIFS="$IFS"
 
   # build up the profile
   IFS=$'\n'
-  profileData=$(cat "$PROFILE")
-  profileDataArray=($profileData)
+  local profileData=$(cat "$PROFILE")
+  local profileDataArray=($profileData)
 
   # print out header
   printf "%-15s %-10s %-10s %-10s %-10s %-10s\n" 'program' 'before' 'after' 'nops after' 'real after' 'pct gone'
@@ -114,12 +136,16 @@ run_profile() {
     IFS=';'
 
     # put parameters into array
-    lineArgs=($line)
+    local lineArgs=($line)
+
+    # get the original number
+    find_orig_count_name="${lineArgs[0]}"
+    find_orig_count
 
     # print out the information about program
-    printf "%-15s %-10s %-10d %-10d %-10d %-10s\n" \
+    printf "%-15s %-10d %-10d %-10d %-10d %-10s\n" \
       "${lineArgs[0]}" \
-      '--' \
+      "$find_orig_count_return" \
       "$(expr ${lineArgs[1]} + ${lineArgs[2]})" \
       "${lineArgs[1]}" \
       "${lineArgs[2]}" \
