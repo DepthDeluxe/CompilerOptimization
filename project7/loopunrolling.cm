@@ -1,0 +1,18 @@
+void main(void) {
+  int x;
+  int y;
+  int n;
+  int m;
+
+  n = 0;
+  while ( n < 100000 ) {
+    x = x + n;
+    n = n + 1;
+  }
+
+  y = 0;
+  while ( m < 100000 ) {
+    y = y + m;
+    m = m + 1;
+  }
+}

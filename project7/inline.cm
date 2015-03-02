@@ -1,0 +1,30 @@
+int isNCool(int n) {
+  return n > 1000;
+}
+
+int somethingMore(int n) {
+  int x = 5;
+  n = x + n;
+
+  return n < 437;
+}
+
+void main(void) {
+  int n;
+  int numberOfCool;
+  int numberOfMore;
+
+  n = 0;
+  numberOfCool = 0;
+  numberOfMore = 0;
+
+  while ( n < 100000 ) {
+    numberOfCool = numberOfCool + isNCool(n);
+    numberOfMore = numberOfMore + somethingMore(n);
+
+    n = n + 1;
+  }
+
+  output( numberOfCool );
+  output( numberOfMore );
+}

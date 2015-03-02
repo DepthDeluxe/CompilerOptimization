@@ -1,0 +1,41 @@
+int global;
+
+
+int somethingRT(int n) {
+  int x;
+  int m;
+
+  while ( x < 1000 ) {
+    m = n;
+    x = x + 1;
+  }
+
+  return n < 437;
+}
+
+int notRT(int n) {
+  global = global + 1;
+  return n > 1000;
+}
+
+void main(void) {
+  int x;
+  int numberRT;
+  int numberNotRT;
+
+  x = 0;
+  numberRT = 0;
+  numberNotRT = 0;
+
+  while ( x < 10000 ) {
+
+    numberRT = numberRT + somethingRT(x);
+    numberNotRT = numberNotRT + notRT(x);
+
+    x = x + 1;
+  }
+
+  output(numberRT);
+  output(numberNotRT);
+  output(global);
+}
