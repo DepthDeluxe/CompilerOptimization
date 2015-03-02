@@ -41,12 +41,15 @@ int main(int argc, char** argv) {
   fprintf(stderr,"Generating code...\n");
   codegenSupportInit();
   generateCode(parseTreePtr);
-  printInstructionTable();
 
+  // profile if enabled
   if ( with_profile ) {
     fprintf(stderr, "Profiling...\n");
     profile();
   }
+
+  fprintf(stderr, "Writing code to stdout...\n");
+  printInstructionTable();
 
   fprintf(stderr,"Done!\n");
 

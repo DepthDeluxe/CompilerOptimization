@@ -306,7 +306,7 @@ void push(int reg, char *comm) {
 
   // emit instructions
   emitRM(ST, reg, 0, sp, full_comment);
-  emitRM(LDA, sp, -1, sp, full_comment);
+  emitRM(LDA, sp, -1, sp, "");
 
   free(full_comment);
 }
@@ -317,10 +317,8 @@ void pop(int reg, char *comm) {
   strcat(full_comment, "POP: ");
   strcat(full_comment, comm);
 
-  fprintf(stderr, full_comment);
-
   emitRM(LDA, sp, 1, sp, full_comment);
-  emitRM(LD, reg, 0, sp, full_comment);
+  emitRM(LD, reg, 0, sp, "");
 
   free(full_comment);
 }
@@ -612,6 +610,9 @@ void printOpcode(Opcode op) {
     case JGE:
       printf("%*s", 5, "JGE");
       break;
+    case NOP:
+      printf("%*s", 5, "NOP");
+      break;
     default:
       printf("%*s", 5, "XXX");
   }
@@ -633,6 +634,7 @@ void printInstruction(int label, TMInstruction* i) {
 
 // prints out the entire instruction table
 void printInstructionTable(GHashTable* ht) {
+  /*
   GList* keys = g_hash_table_get_keys(instructionTable);
   GList* curKey = keys;
   while ( curKey != NULL ) {
@@ -642,11 +644,22 @@ void printInstructionTable(GHashTable* ht) {
 
     curKey = curKey->next;
   }
+  */
+  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+    printInstruction(n, inst);
+  }
 }
 
 /*
  * Code Profiler
  */
+void _nopifyInstruction(TMInstruction* inst) {
+  inst->opCode = NOP;
+  inst->a = 0;
+  inst->b = 0;
+  inst->c = 0;
+}
 
 void profileLDST() {
   int state = 0;
@@ -884,20 +897,6 @@ void profileDIVMUL() {
   fprintf(stderr, "DIVMUL: %i\n", numIdentified);
 }
 
-void profileLDNULL() {
-  int numIdentified = 0;
-  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
-    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
-    if ( inst->opCode == LD &&
-         inst->a == inst->c &&
-         inst->b == 0 ) {
-      numIdentified++;
-    }
-  }
-
-  fprintf(stderr, "LDNULL: %i\n", numIdentified);
-}
-
 void profileDUP() {
   int state = 0;
   int numIdentified = 0;
@@ -945,56 +944,73 @@ void profileDUP() {
 }
 
 // reutrns the number of unnecessary instructions
-int _pushpopLookAhead(int start, int X, int* end) {
+int _pushpopMatch(int start, int X, int* end) {
+  // store the number of redundant push/pops, whether or not this
+  // push/pop pair should count, and the current position
   int numIdentified = 0;
+  int shouldCount = 1;
   int i;
   for ( i = start; i < g_hash_table_size(instructionTable); i++ ) {
+    // get the next instruction
     TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &i);
 
-    // if the a param is X, then investigate
-    if ( inst->a == X ) {
-      // if "POP: ", then we are done
-      // if some other assignment instruction, then we needed
-      // to push that variable to the stack
-      int compare = strncmp("POP: ", inst->comment, 5);
-      if ( compare == 0 ) {
-        numIdentified++;
-        break;
-      } else {
-        // only some statements really do assigning, if one of those
-        // statements, then return 0
-        int shouldBreak = 0;
-        switch ( inst->opCode ) {
-        case IN:
-        case LD:
-        case LDA:
-        case LDC:
-        case ADD:
-        case SUB:
-        case MUL:
-        case DIV:
-          shouldBreak = 1;
-          break;
-        default:
-          break;
-        }
-
-        if ( shouldBreak ) {
-          break;
-        }
-      }
-
+    // recurse again if we found another PUSH instruction
+    int compare = strncmp("PUSH: ", inst->comment, 6);
+    if ( compare == 0 ) {
+      int niThis = _pushpopMatch(i+2, inst->a, &i);
+      numIdentified += niThis;
+      continue;
     }
 
-    // look for more push instructions, move i to the end of the function
-    int compare = strncmp("PUSH: ", inst->comment, 5);
+    // break out if we find a POP, successful identification
+    compare = strncmp("POP: ", inst->comment, 5);
     if ( compare == 0 ) {
-      int numIdentifiedInFn = _pushpopLookAhead(i+1, inst->a, &i);
-      numIdentified += numIdentifiedInFn;
+
+      // only perform swap where it counts, if shouldCount == 0, that means
+      // there was an instruction that overwrote that register
+      if ( shouldCount ) {
+        // nopify the PUSH instructions
+        int loc = start-2;
+        TMInstruction* ti = (TMInstruction*)g_hash_table_lookup(instructionTable, &loc);
+        _nopifyInstruction(ti);
+        loc++;
+        ti = (TMInstruction*)g_hash_table_lookup(instructionTable, &loc);
+        _nopifyInstruction(ti);
+
+        // nopify the POP instructions
+        _nopifyInstruction(inst);
+        loc = i+1;
+        ti = (TMInstruction*)g_hash_table_lookup(instructionTable, &loc);
+        _nopifyInstruction(ti);
+
+        numIdentified++;
+      }
+
+      // let i skip over the second POP instruction
+      // increase the number identified by 1
+      i++;
+      break;
+    }
+
+    // if there was an assignment, the current push/pop sequence doesn't count
+    if ( inst->a == X ) {
+      switch ( inst->opCode ) {
+      case ADD:
+      case SUB:
+      case MUL:
+      case DIV:
+      case LD:
+      case LDA:
+      case LDC:
+      case IN:
+        shouldCount = 0;
+        break;
+      default:
+        break;
+      }
     }
   }
 
-  // write the value for the end
   *end = i;
   return numIdentified;
 }
@@ -1004,19 +1020,17 @@ int _pushpopLookAhead(int start, int X, int* end) {
 void profilePUSHPOP() {
   int state = 0;
   int numIdentified = 0;
-  int X;
-  for ( int i = 0; i < g_hash_table_size(instructionTable); i++ ) {
-    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &i);
 
+  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+    // get the next instruction
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+
+    // recurse again if we found another PUSH instruction
     int compare = strncmp("PUSH: ", inst->comment, 6);
     if ( compare == 0 ) {
-      // pick up the stored value
-      X = inst->a;
-
-      // keep looking until we pop that value to make sure
-      // we aren't reassigning
-      int numIdentifiedInFn = _pushpopLookAhead(i, X, &i);
-      numIdentified += numIdentifiedInFn;
+      int niThis = _pushpopMatch(n+2, inst->a, &n);
+      numIdentified += niThis;
+      continue;
     }
   }
 
@@ -1034,7 +1048,6 @@ void profile() {
   profileSUBADD();
   profileMULDIV();
   profileDIVMUL();
-  profileLDNULL();
   profileDUP();
   profilePUSHPOP();
 

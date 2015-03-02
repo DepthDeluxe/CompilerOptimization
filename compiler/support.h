@@ -28,7 +28,8 @@ extern void semanticCheck(TreeNode* nodePtr);
 typedef enum {
   HALT, IN, INF, OUT, OUTF, LD, ST, LDA, LDC, LDF,
   ADD, SUB, MUL, DIV,
-  JEQ, JNE, JLT, JLE, JGT, JGE
+  JEQ, JNE, JLT, JLE, JGT, JGE,
+  NOP
 } Opcode;
 
 // Code Generation support functions

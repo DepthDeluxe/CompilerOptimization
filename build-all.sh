@@ -30,7 +30,7 @@ build_programs() {
     echo "Building: $file"
 
     name=$(echo "$file" | cut -d'.' -f 1)
-    $CC < "$file" > "build/${name}.tm"
+    $CC $CFLAGS < "$file" > "build/${name}.tm"
 
     if [ $? -ne 0 ]; then
       echo "Error: failed to build $file!"
@@ -118,6 +118,7 @@ find_orig_count() {
 }
 
 run_profile() {
+  CFLAGS="-p"
   run_tests
 
   local oldIFS="$IFS"
