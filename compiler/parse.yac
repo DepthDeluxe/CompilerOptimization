@@ -1,6 +1,9 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "support.h"
+#include "types.h"
 #include "compiler.h"
 %}
 

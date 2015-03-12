@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "types.h"
 #include "compiler.h"
 
 int lineno = 1;
