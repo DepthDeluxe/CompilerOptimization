@@ -75,7 +75,7 @@ static void program(TreeNode* nodePtr) {
     emitRM(LD,pc,-1,fp, "     Return (end of function)");
 
     // provide inputf function
-    if ( with_float) {
+    if ( with_float ) {
       semRecPtr = lookup(nodePtr->line, symTabPtr, "input");
       semRecPtr->f.addr = emitSkip(0);
       emitRM(ST,ac0,-1,fp,"Inputf Function, store return addr");
@@ -280,6 +280,11 @@ static void selectionStmt(TreeNode* nodePtr) {
 
 /* 17. whileStmt -> while '(' exp ')' stmt */
 static void whileStmt( TreeNode* nodePtr ) {
+  // save away the previous while values
+  int prevWhileCL           = whileConditionalLocation;
+  int prevWhileJL           = whileJumpLocation;
+  nodekind_t prevWhileType  = whileConditionalType;
+
   // get the start of the expression
   int startLoc = emitSkip(0);
   whileConditionalLocation = startLoc;
@@ -321,6 +326,11 @@ static void whileStmt( TreeNode* nodePtr ) {
     emitRMAbs(JEQ,ac0, endLoc,"");
   }
   emitRestore();
+
+  // restore the while statement values
+  whileConditionalLocation  = prevWhileCL;
+  whileJumpLocation         = prevWhileJL;
+  whileConditionalType      = prevWhileType;
 }
 
 /* 17a. jumpStmt -> break | continue */
