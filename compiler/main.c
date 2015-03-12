@@ -2,8 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "types.h"
 #include "compiler.h"
+
 #include "support.h"
+#include "semantic.h"
+#include "codegen.h"
+#include "profiler.h"
 
 // Evil (but necessary) Globals!
 SymbolTable   symTabPtr = NULL;  // Pointer to the top of the symbol table

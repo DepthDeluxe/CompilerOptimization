@@ -1,8 +1,12 @@
 #include <stdio.h> // fprintf(), stderr
-//#include <stdlib.h> // atoi, atof, malloc, sizeof, ...
-//#include <string.h> // c-string (char *) functions
+#include <glib.h>
+
+#include "types.h"
 #include "compiler.h"
-#include "support.h"
+
+#include "codegen_support.h"
+
+GHashTable* instructionTable;
 
 // Headers for all functions in this file.
 // static means the function cannot be used outside of this file
