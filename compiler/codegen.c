@@ -604,7 +604,7 @@ static void call(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
     semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
-    push(fp,              "     Function call, save old FP");
+    push(fp,              "Function call, save old FP");
     emitRM(LDA,sp,-1,sp,"     Save space for return addr");
 
     args(nodePtr->ptr1);                     // Output args code
@@ -613,7 +613,7 @@ static void call(TreeNode* nodePtr) {
     emitRM(LDA,sp,-nodePtr->locals_so_far,sp, "     Set SP after locals");
 
     emitRM(LDA,ac0,1,pc,"     Get return addr");  // ac0 = return addr (pc+1)
-    emitRMAbs(LDA,pc,semRecPtr->f.addr,"     Jump to function");
+    emitRMAbs(LDA,pc,semRecPtr->f.addr,"CALL:     Jump to function");
     emitRM(LDA,sp,0,fp,                "     Restore old SP");
     emitRM(LD,fp,0,fp,                 "     Restore old FP");
 }

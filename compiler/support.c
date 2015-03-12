@@ -547,6 +547,7 @@ int getASMPrintType(Opcode op) {
     case SUB:
     case MUL:
     case DIV:
+    case NOP:
       return 1;
     default:
       return 0;
@@ -634,17 +635,6 @@ void printInstruction(int label, TMInstruction* i) {
 
 // prints out the entire instruction table
 void printInstructionTable(GHashTable* ht) {
-  /*
-  GList* keys = g_hash_table_get_keys(instructionTable);
-  GList* curKey = keys;
-  while ( curKey != NULL ) {
-    int label = (int)*((int*)curKey->data);
-    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &label);
-    printInstruction(label, inst);
-
-    curKey = curKey->next;
-  }
-  */
   for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
     TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
     printInstruction(n, inst);
@@ -654,7 +644,8 @@ void printInstructionTable(GHashTable* ht) {
 /*
  * Code Profiler
  */
-void _nopifyInstruction(TMInstruction* inst) {
+void _nopifyInstruction(int loc) {
+  TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &loc);
   inst->opCode = NOP;
   inst->a = 0;
   inst->b = 0;
@@ -679,6 +670,9 @@ void profileLDST() {
                 inst->b == b &&
                 inst->c == c ) {
       if ( state == 1 ) {
+        // nopify both instructions
+        _nopifyInstruction(n-1);
+        _nopifyInstruction(n);
         numIdentified++;
       }
 
@@ -709,6 +703,9 @@ void profileSTLD() {
                 inst->b == b &&
                 inst->c == c ) {
       if ( state == 1 ) {
+        // nopify both instructions
+        _nopifyInstruction(n-1);
+        _nopifyInstruction(n);
         numIdentified++;
       }
 
@@ -737,6 +734,8 @@ void profileSTST() {
                 inst->b == b &&
                 inst->c == c ) {
       if ( state == 1 ) {
+        // nopify the second op
+        _nopifyInstruction(n);
         numIdentified++;
       }
 
@@ -765,6 +764,8 @@ void profileLDLD() {
                 inst->b == b &&
                 inst->c == c ) {
       if ( state == 1 ) {
+        // nopify the second op
+        _nopifyInstruction(n);
         numIdentified++;
       }
 
@@ -795,6 +796,9 @@ void profileADDSUB() {
                 inst->b == X &&
                 inst->c == Y ) {
       if ( state == 1 ) {
+        // nopify the instructions
+        _nopifyInstruction(n-1);
+        _nopifyInstruction(n);
         numIdentified++;
       }
 
@@ -825,6 +829,9 @@ void profileSUBADD() {
                 inst->b == X &&
                 inst->c == Y ) {
       if ( state == 1 ) {
+        // nopify the instructions
+        _nopifyInstruction(n-1);
+        _nopifyInstruction(n);
         numIdentified++;
       }
 
@@ -855,6 +862,9 @@ void profileMULDIV() {
                 inst->b == X &&
                 inst->c == Y ) {
       if ( state == 1 ) {
+        // nopify the instructions
+        _nopifyInstruction(n-1);
+        _nopifyInstruction(n);
         numIdentified++;
       }
 
@@ -885,6 +895,9 @@ void profileDIVMUL() {
                 inst->b == X &&
                 inst->c == Y ) {
       if ( state == 1 ) {
+        // nopify the instructions
+        _nopifyInstruction(n-1);
+        _nopifyInstruction(n);
         numIdentified++;
       }
 
@@ -897,102 +910,52 @@ void profileDIVMUL() {
   fprintf(stderr, "DIVMUL: %i\n", numIdentified);
 }
 
-void profileDUP() {
-  int state = 0;
-  int numIdentified = 0;
-  int X;
-  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
-    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+// reutrns the number of unnecessary instructions
+void _nopifyPushPop(int pushStart, int popStart) {
+  // nopify the PUSH instructions
+  _nopifyInstruction(pushStart);
+  _nopifyInstruction(pushStart + 1);
 
-    // check for a valid operation
-    int validOp = 0;
-    switch( inst->opCode ) {
-    case ADD:
-    case SUB:
-    case MUL:
-    case DIV:
-    case LDA:
-    case LDC:
-      validOp = 1;
-      break;
-    default:
-      break;
-    }
-
-    // break out if the instruction didn't match
-    if ( !validOp ) {
-      state = 0;
-      break;
-    }
-
-    // transition states
-    switch( state ) {
-    case 0:
-      X = inst->a;
-      state = 1;
-      break;
-    case 1:
-      if ( inst->a == X ) {
-        numIdentified++;
-      }
-      state = 0;
-      break;
-    }
-  }
-
-  fprintf(stderr, "DUP: %i\n", numIdentified);
+  // nopify the POP instructions
+  _nopifyInstruction(popStart);
+  _nopifyInstruction(popStart + 1);
 }
 
-// reutrns the number of unnecessary instructions
-int _pushpopMatch(int start, int X, int* end) {
+int _pushpopMatch(int start, int X) {
   // store the number of redundant push/pops, whether or not this
-  // push/pop pair should count, and the current position
-  int numIdentified = 0;
-  int shouldCount = 1;
+  // push/pop pair should count, and how many push/pops we are deep
+  int isValid = 1;
+  int depth = 1;
+
+  // iterate instructions either until the end or until we have broken out of
+  // the push/pop pair
   int i;
-  for ( i = start; i < g_hash_table_size(instructionTable); i++ ) {
+  for ( i = start; ( i < g_hash_table_size(instructionTable) ) && (depth > 0); i++ ) {
     // get the next instruction
     TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &i);
 
-    // recurse again if we found another PUSH instruction
+    // if we see another PUSH statement, then increment the depth counter
     int compare = strncmp("PUSH: ", inst->comment, 6);
     if ( compare == 0 ) {
-      int niThis = _pushpopMatch(i+2, inst->a, &i);
-      numIdentified += niThis;
+      depth++;
       continue;
     }
 
     // break out if we find a POP, successful identification
     compare = strncmp("POP: ", inst->comment, 5);
     if ( compare == 0 ) {
+      depth--;
+      continue;
+    }
 
-      // only perform swap where it counts, if shouldCount == 0, that means
-      // there was an instruction that overwrote that register
-      if ( shouldCount ) {
-        // nopify the PUSH instructions
-        int loc = start-2;
-        TMInstruction* ti = (TMInstruction*)g_hash_table_lookup(instructionTable, &loc);
-        _nopifyInstruction(ti);
-        loc++;
-        ti = (TMInstruction*)g_hash_table_lookup(instructionTable, &loc);
-        _nopifyInstruction(ti);
-
-        // nopify the POP instructions
-        _nopifyInstruction(inst);
-        loc = i+1;
-        ti = (TMInstruction*)g_hash_table_lookup(instructionTable, &loc);
-        _nopifyInstruction(ti);
-
-        numIdentified++;
-      }
-
-      // let i skip over the second POP instruction
-      // increase the number identified by 1
-      i++;
-      break;
+    // make sure we don't look into another function call
+    compare = strncmp("CALL:", inst->comment, 5);
+    if ( compare == 0 ) {
+      isValid = 0;
     }
 
     // if there was an assignment, the current push/pop sequence doesn't count
+    // keep iterating until the appropro pop statement
     if ( inst->a == X ) {
       switch ( inst->opCode ) {
       case ADD:
@@ -1003,7 +966,7 @@ int _pushpopMatch(int start, int X, int* end) {
       case LDA:
       case LDC:
       case IN:
-        shouldCount = 0;
+        isValid = 0;
         break;
       default:
         break;
@@ -1011,16 +974,21 @@ int _pushpopMatch(int start, int X, int* end) {
     }
   }
 
-  *end = i;
-  return numIdentified;
+  // only perform swap where it counts, if isValid == 0, that means
+  // there was an instruction that overwrote that register
+  if ( isValid ) {
+    _nopifyPushPop(start-2, i);
+  }
+
+  return isValid;
 }
 
 // profiles the PUSH and POP operations, checks to see if we are pushing
 // something that never gets assigned to before we pop.
 void profilePUSHPOP() {
-  int state = 0;
   int numIdentified = 0;
 
+  // run this part from the beginning
   for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
     // get the next instruction
     TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
@@ -1028,13 +996,97 @@ void profilePUSHPOP() {
     // recurse again if we found another PUSH instruction
     int compare = strncmp("PUSH: ", inst->comment, 6);
     if ( compare == 0 ) {
-      int niThis = _pushpopMatch(n+2, inst->a, &n);
-      numIdentified += niThis;
-      continue;
+      numIdentified += _pushpopMatch(n+2, inst->a);
     }
+
   }
 
   fprintf(stderr, "PUSHPOP: %i\n", numIdentified);
+}
+
+int _pushToCopyMatch( int start, int X ) {
+  int depth = 1;      // keep track of push/pop depth
+  int isValid = 1;    // assume is valid until another write operation
+  int i;              // keep track of position
+  for ( i = start; (i > -1) && (depth > 0); i-- ) {
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &i);
+
+    // look for matching PUSH instructions
+    int compare = strncmp("PUSH: ", inst->comment, 6);
+    if ( compare == 0 ) {
+      depth--;
+      continue;
+    }
+
+    compare = strncmp("POP: ", inst->comment, 5);
+    if ( compare == 0 ) {
+      depth++;
+      continue;
+    }
+
+    // make sure we don't look into another function
+    compare = strncmp("CALL:", inst->comment, 5);
+    if ( compare == 0 ) {
+      isValid = 0;
+    }
+
+    // don't count this one if we assign to the register we pop at
+    if ( inst->a == X ) {
+      switch ( inst->opCode ) {
+      case ADD:
+      case SUB:
+      case MUL:
+      case DIV:
+      case LD:
+      case LDA:
+      case LDC:
+      case IN:
+        isValid = 0;
+        break;
+      default:
+        break;
+      }
+    }
+  }
+
+  // if there was no assignment to POP register over whole time,
+  // then we should perform optimization
+  if ( isValid && i > -1 ) {
+    // get the register to save
+    int loc = i+1;
+    TMInstruction* ti = (TMInstruction*)g_hash_table_lookup(instructionTable, &loc);
+    int regToSave = ti->a;
+
+    // nopify all the instructions
+    _nopifyPushPop(loc, start+1);
+
+    ti->opCode = LDA;
+    ti->a = X;
+    ti->b = 0;
+    ti->c = regToSave;
+  }
+
+  return isValid;
+}
+void profilePUSHTOCOPY() {
+  int numIdentified = 0;
+
+  // start from the end since we want outside instructions to change
+  // before inside instructions
+  for ( int n = g_hash_table_size(instructionTable)-1; n > 0; n-- ) {
+    // get the next instruction
+    TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
+
+    int compare = strncmp("POP: ", inst->comment, 5);
+    if ( compare == 0 ) {
+      // get the next instruction to find the target register
+      int loc = n+1;
+      TMInstruction* ti = (TMInstruction*)g_hash_table_lookup(instructionTable, &loc);
+      numIdentified += _pushToCopyMatch(n-1, ti->a);
+    }
+  }
+
+  fprintf(stderr, "PUSHTOCOPY: %i\n", numIdentified);
 }
 
 void profile() {
@@ -1048,8 +1100,8 @@ void profile() {
   profileSUBADD();
   profileMULDIV();
   profileDIVMUL();
-  profileDUP();
   profilePUSHPOP();
+  profilePUSHTOCOPY();
 
   fprintf(stderr, "======================\n");
 }
