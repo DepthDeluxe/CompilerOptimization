@@ -1,0 +1,24 @@
+void main(void) {
+  int i;
+  int j;
+
+  i = 0;
+
+  while ( i < 10 ) {
+    j = 0;
+    while ( j < 10 ) {
+      if ( j > 8 ) {
+        output(j);
+      }
+
+      j = j + 1;
+    }
+
+    output(i);
+    if ( i > 5 ) {
+      break;
+    }
+
+    i = i + 1;
+  }
+}
