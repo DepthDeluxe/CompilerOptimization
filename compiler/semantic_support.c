@@ -280,4 +280,5 @@ void endScope() {
   // TODO: Free up memory from used table
 
   // free up the malloced scope
+  free(oldScope);
 }

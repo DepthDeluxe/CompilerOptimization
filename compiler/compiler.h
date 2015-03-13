@@ -25,6 +25,10 @@ extern int           lineno;
 // hash table to store instructions
 extern GHashTable* instructionTable;
 
+// function externs
+extern int yyparse(void);
+extern int yylex(void);
+
 // For debugging purposes
 #define _test(a,b)  if (NULL==a) fprintf(stderr, "ACCESSING NULL %s\n", b);
 

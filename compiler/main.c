@@ -13,9 +13,6 @@
 
 ParseTree     parseTreePtr;      // Pointer to the top of the parse tree
 
-// function externs
-extern int yyparse(void);
-
 /****************************************************************************/
 /*                                                                          */
 /* main()                                                                   */

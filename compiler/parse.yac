@@ -557,10 +557,9 @@ argList : exp ',' argList
 ;
 
 %%
-
 #include "lex.yy.c"
 
-yyerror(char *s) {
+int yyerror(char *s) {
   fprintf(stderr,"Syntactic error!  Line %d, unexpected token ",lineno);
   switch (yychar) {
   case ';':
