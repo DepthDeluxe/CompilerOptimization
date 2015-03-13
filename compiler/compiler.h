@@ -19,7 +19,6 @@
 // options
 int with_float;
 
-extern SymbolTable   symTabPtr;
 extern ParseTree     parseTreePtr;
 extern int           lineno;
 

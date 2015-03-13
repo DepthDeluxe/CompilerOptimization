@@ -4,6 +4,7 @@
 
 #include "compiler.h"
 #include "support.h"
+#include "semantic_support.h"
 
 // Headers for all functions in this file
 static void program(TreeNode* nodePtr);
@@ -57,15 +58,15 @@ static void program(TreeNode* nodePtr) {
 
     // Setup the top scope
     beginScope();                            // Push sym tab scope
-    symTabPtr->base = gp;                    // Base = gp reg (4)
-    symTabPtr->used = 0;                     // No spc used yet
+    currentScope->base = gp;                    // Base = gp reg (4)
+    currentScope->used = 0;                     // No spc used yet
 
     // Make a semantic rec for the input function
     semRecPtr = newSemRec();
     semRecPtr->f.kind = func;
     semRecPtr->f.numParams = 0;
     semRecPtr->f.localSpace = 0;
-    insert(nodePtr->line, symTabPtr,"input",semRecPtr);
+    insert(nodePtr->line, currentScope,"input",semRecPtr);
 
     // Make a semantic rec for the inputf function
     if ( with_float ) {
@@ -73,7 +74,7 @@ static void program(TreeNode* nodePtr) {
       semRecPtr->f.kind = func;
       semRecPtr->f.numParams = 0;
       semRecPtr->f.localSpace = 0;
-      insert(nodePtr->line, symTabPtr,"inputf",semRecPtr);
+      insert(nodePtr->line, currentScope,"inputf",semRecPtr);
     }
 
     // Make a semantic rec for the output function
@@ -81,7 +82,7 @@ static void program(TreeNode* nodePtr) {
     semRecPtr->f.kind = func;
     semRecPtr->f.numParams = 1;
     semRecPtr->f.localSpace = 0;
-    insert(nodePtr->line, symTabPtr,"output",semRecPtr);
+    insert(nodePtr->line, currentScope,"output",semRecPtr);
 
     // Make a semantic rec for the outputf function
     if ( with_float ) {
@@ -89,14 +90,14 @@ static void program(TreeNode* nodePtr) {
       semRecPtr->f.kind = func;
       semRecPtr->f.numParams = 1;
       semRecPtr->f.localSpace = 0;
-      insert(nodePtr->line, symTabPtr,"outputf",semRecPtr);
+      insert(nodePtr->line, currentScope,"outputf",semRecPtr);
     }
 
-    declarationList(nodePtr->ptr1);         // Check declList code
+    declarationList(nodePtr->ptr1);           // Check declList code
 
     // Clean up the top scope
-    nodePtr->symTabPtr = symTabPtr;         // Save symbol table for later use
-    symTabPtr = symTabPtr->prevScope;       // Pop scope
+    nodePtr->scope = currentScope;            // Save symbol table for later use
+    currentScope = currentScope->prevScope;   // Pop scope
 }
 
 /* 2. declList -> decl declList | decl */
@@ -147,10 +148,10 @@ static void varDeclaration(TreeNode* nodePtr) {
         semRecPtr->v.kind = floatvar;
       }
 
-      semRecPtr->v.base = symTabPtr->base;
-      semRecPtr->v.offset = -symTabPtr->used;
-      symTabPtr->used++;  // 1 more space has been used
-      insert(nodePtr->line, symTabPtr, nodePtr->value.string, semRecPtr);
+      semRecPtr->v.base = currentScope->base;
+      semRecPtr->v.offset = -currentScope->used;
+      currentScope->used++;  // 1 more space has been used
+      insert(nodePtr->line, currentScope, nodePtr->value.string, semRecPtr);
 
       // increment the locals counter
       locals++;
@@ -182,10 +183,10 @@ static void varDeclaration(TreeNode* nodePtr) {
       // set the proper type depending on the typeSpec
       semRecPtr->v.kind = intarr;
 
-      semRecPtr->v.base = symTabPtr->base;
-      semRecPtr->v.offset = -symTabPtr->used;
-      symTabPtr->used += nodePtr->array_len;
-      insert(nodePtr->line, symTabPtr, nodePtr->value.string,semRecPtr);
+      semRecPtr->v.base = currentScope->base;
+      semRecPtr->v.offset = -currentScope->used;
+      currentScope->used += nodePtr->array_len;
+      insert(nodePtr->line, currentScope, nodePtr->value.string,semRecPtr);
 
       // increment the local variable counter by the
       // number of items in the array
@@ -201,11 +202,11 @@ static void funDeclaration(TreeNode* nodePtr) {
      semRecPtr->f.kind = func;
      semRecPtr->f.numParams = -1;            // Dummy value
      semRecPtr->f.localSpace = -1;           // Dummy value
-     insert(nodePtr->line, symTabPtr, nodePtr->value.string,semRecPtr);
+     insert(nodePtr->line, currentScope, nodePtr->value.string,semRecPtr);
 
      beginScope();                           // Push scope onto sym tab
-     symTabPtr->base = fp;                   // Base = FP
-     symTabPtr->used = 2;                    // Spc for old fp, return addr
+     currentScope->base = fp;                   // Base = FP
+     currentScope->used = 2;                    // Spc for old fp, return addr
      theNumParams = 0;                       // No params yet
 
      params(nodePtr->ptr2);                  // Check params code
@@ -216,8 +217,8 @@ static void funDeclaration(TreeNode* nodePtr) {
      functionStmt(nodePtr->ptr3);            // Check compStmt code
 
      semRecPtr->f.localSpace = locals;
-     nodePtr->symTabPtr = symTabPtr;         // Save symbol table for later use
-     symTabPtr = symTabPtr->prevScope;       // Pop scope
+     nodePtr->scope = currentScope;          // Save symbol table for later use
+     currentScope = currentScope->prevScope; // Pop scope
 }
 
 /* 7. params -> paramList | VOID */
@@ -258,10 +259,10 @@ static void param(TreeNode* nodePtr) {
     } else if ( nodePtr->ptr1->kind == typeSpecFloat ) {
       semRecPtr->v.kind = floatvar;
     }
-    semRecPtr->v.base = symTabPtr->base;
-    semRecPtr->v.offset = -symTabPtr->used;
-    symTabPtr->used++;
-    insert(nodePtr->line, symTabPtr,nodePtr->value.string,semRecPtr);
+    semRecPtr->v.base = currentScope->base;
+    semRecPtr->v.offset = -currentScope->used;
+    currentScope->used++;
+    insert(nodePtr->line, currentScope,nodePtr->value.string,semRecPtr);
     theNumParams++;
     }
     else { //if (nodePtr->kind ==paramArray)
@@ -277,10 +278,10 @@ static void param(TreeNode* nodePtr) {
     // Make a semantic record for the parameter (local array variable).
     semRecPtr = newSemRec();           // new semantic record (var)
     semRecPtr->v.kind = refarr;        // Kind = reference array
-    semRecPtr->v.base = symTabPtr->base;    // set base loc
-    semRecPtr->v.offset = -symTabPtr->used; // set offset loc
-    symTabPtr->used++;                      // update spc used
-    insert(nodePtr->line, symTabPtr, nodePtr->value.string,semRecPtr);
+    semRecPtr->v.base = currentScope->base;    // set base loc
+    semRecPtr->v.offset = -currentScope->used; // set offset loc
+    currentScope->used++;                      // update spc used
+    insert(nodePtr->line, currentScope, nodePtr->value.string,semRecPtr);
     theNumParams++;                         // inc num of params
     }
 }
@@ -334,13 +335,13 @@ static void expressionStmt(TreeNode* nodePtr) {
 /* 15. compStmt -> '{' localDecl stmtList '}' */
 static void compoundStmt(TreeNode* nodePtr) {
     beginScope();                        // Push scope onto sym tab
-    symTabPtr->base = fp;                // Base = FP
-    symTabPtr->used = symTabPtr->prevScope->used;
+    currentScope->base = fp;                // Base = FP
+    currentScope->used = currentScope->prevScope->used;
                  // Same space amount as outer scope
     localDeclaration(nodePtr->ptr1);     // Check localDecl code
     statementList(nodePtr->ptr2);        // Check stmtList code
-    nodePtr->symTabPtr = symTabPtr;      // Save symbol table for later use
-    symTabPtr = symTabPtr->prevScope;    // Pop scope
+    nodePtr->scope = currentScope;      // Save symbol table for later use
+    currentScope = currentScope->prevScope;    // Pop scope
 }
 
 /* 16. selStmt -> if '(' exp ')' stmt | if '(' exp ')' stmt else stmt */
@@ -404,7 +405,7 @@ static void var(TreeNode* nodePtr, int rlval) {
 
     // For variables...
     if (nodePtr->kind == varSingle) {
-      semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+      semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
 
       // rlval == 0 checks the lvalue case
       // rlval == 1 checks the rvalue case
@@ -435,7 +436,7 @@ static void var(TreeNode* nodePtr, int rlval) {
     } else if (nodePtr->kind == varArray) {
       expression(nodePtr->ptr1);          // Check exp code
 
-      semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+      semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
 
       // rlval == 0 checks the lvalue case
       // rlval == 1 checks the rvalue case
@@ -533,7 +534,7 @@ static void factor(TreeNode* nodePtr) {
 static void call(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+    semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
 
     args(nodePtr->ptr1);                      // Check args code
 
@@ -558,5 +559,4 @@ static void argList(TreeNode* nodePtr) {
     } else //if (nodePtr->kind == argListSingle)
     expression(nodePtr->ptr1);            // Check exp code
 }
-
 

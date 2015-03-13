@@ -1,6 +1,8 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
+#include <glib.h>
+
 // Types: int, array of int, array of ptr to int, function
 typedef enum {intvar, intarr, floatvar, refarr, func} types_t;
 
@@ -44,35 +46,27 @@ typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varD
  * The type checker *should* notice if you try to use it as both v and f.
  */
 typedef union {
-    struct {
-  types_t kind;     // Variable type (types that aren't func)
-  int base;            // Memory location (usually fp - offset)
-  int offset;
-    } v;
-    struct {
-  types_t kind;            // Function type (always func)
-  int addr;            // Memory location where the code is stored
-  int numParams;       // Number of parameters
-  int localSpace;      // Space for local variables
-    } f;
+  struct {
+    types_t kind;     // Variable type (types that aren't func)
+    int base;            // Memory location (usually fp - offset)
+    int offset;
+  } v;
+  struct {
+    types_t kind;            // Function type (always func)
+    int addr;            // Memory location where the code is stored
+    int numParams;       // Number of parameters
+    int localSpace;      // Space for local variables
+  } f;
 } SemRec;
-
-// Hash Table node. Points to a semantic record.
-typedef struct hnode {
-    char*         key;             // Variable or function name
-    int           theLine;          // Code line in .cm file
-    SemRec*       theSemRec;       // The semantic record.
-    struct hnode* nextNode;
-} HashNode,* HashTable;
 
 // Symbol Table node. Points to a hash table of all the semantic
 // records in its scope.
 typedef struct snode {
-    int           base;       // Frame Pointer
-    int           used;       // Space used by variables
-    HashTable*    theTable;  // Pointer to this scope's semantic records
-    struct snode* prevScope; // Pointer to previous scope
-} Scope,* SymbolTable;
+  int           base;       // Frame Pointer
+  int           used;       // Space used by variables
+  GHashTable*   theTable;   // Pointer to this scope's semantic records
+  struct snode* prevScope;  // Pointer to previous scope
+} Scope;
 
 // Parse Tree node.
 typedef struct pnode {
@@ -91,7 +85,7 @@ typedef struct pnode {
     int           line;          // Line number in the code
 
     int           locals_so_far; // used when making function calls
-    SymbolTable   symTabPtr;        // used for nodes beginning a scope
+    Scope*   scope;        // used for nodes beginning a scope
 } TreeNode,* ParseTree;
 
 // opcodes

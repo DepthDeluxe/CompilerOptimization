@@ -8,15 +8,13 @@
 #include "support.h"
 #include "semantic.h"
 #include "codegen.h"
+#include "codegen_support.h"
 #include "profiler.h"
 
-// Evil (but necessary) Globals!
-SymbolTable   symTabPtr = NULL;  // Pointer to the top of the symbol table
 ParseTree     parseTreePtr;      // Pointer to the top of the parse tree
 
-// function declarations
-int hashFunct(char* theName);
-void generateCode(TreeNode* nodePt);
+// function externs
+extern int yyparse(void);
 
 /****************************************************************************/
 /*                                                                          */

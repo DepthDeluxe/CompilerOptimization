@@ -1,5 +1,8 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "semantic_support.h"
 
 #include "types.h"
 #include "semantic.h"
@@ -207,92 +210,74 @@ void printNode(TreeNode* node_ptr, GList* parent_stack) {
   parent_stack = g_list_remove( parent_stack, node_ptr );
 }
 
-/****************************************************************************/
-/*                                                                          */
-/* symbol table                                                             */
-/*                                                                          */
-/****************************************************************************/
+/*
+ * Scope Management
+ */
 
-SemRec* lookup(int line, SymbolTable scopePtr, char* theName) {
-     int slot;
-     SemRec* tempRec;
-     HashNode* tempNode;
+Scope* currentScope;
 
-     slot = hashFunct(theName);      // Hash the key.
+SemRec* lookup(int line, Scope* scopePtr, char* theName) {
+  SemRec* record;
 
-     // If the scope is NULL, the SemRec does not exist, error.
-     if (scopePtr == NULL) {
-	  fprintf(stderr, "Variable/Function does not exist.\n");
-	  fprintf(stderr, "Line = %d, Name = %s \n", line, theName);
-	  exit(1);
-     }
+  // If the scope is NULL, the SemRec does not exist, error.
+  if (scopePtr == NULL) {
+    fprintf(stderr, "Variable/Function does not exist.\n");
+    fprintf(stderr, "Line = %d, Name = %s \n", line, theName);
+    exit(1);
+  }
 
-     tempNode = scopePtr->theTable[slot];  // Look for the node.
-     while((tempNode != NULL) && strcmp(tempNode->key,theName))
-	  tempNode = tempNode->nextNode;
+  GHashTable* table = scopePtr->theTable;
 
-     if (tempNode == NULL)                 // If not found, look in next scope.
-	  tempRec = lookup(line, scopePtr->prevScope, theName);
-     else                                  // Else, retrieve it.
-	  tempRec = tempNode->theSemRec;
+  record = (SemRec*)g_hash_table_lookup(table, theName);
 
-     return tempRec;
+  // lookup the next scope if the temp node is NULL
+  if ( record == NULL ) {
+    record = lookup(line, scopePtr->prevScope, theName);
+  }
+
+  return record;
 }
 
-void insert(int line, SymbolTable scopePtr, char* theName, SemRec* theRec) {
-     int slot = hashFunct(theName);            // Hash the key.
+void insert(int line, Scope* scope, char* theName, SemRec* theRec) {
+  // copy the key to the heap
+  char* heapName = calloc(strlen(theName)+1, sizeof(char));
+  strcpy(heapName, theName);
 
-     HashNode* box = newHTableNode();              // Make a node for it.
+  // TODO: check to see if there is a duplicate definition
 
-     // copy the string
-     box->key = calloc(strlen(theName), sizeof(char));
-     strcpy(box->key, theName);
-
-       box->theLine = line;
-     box->theSemRec = theRec;
-     box->nextNode = NULL;
-
-     box->nextNode = scopePtr->theTable[slot]; // Insert the node.
-     scopePtr->theTable[slot] = box;
+  g_hash_table_replace(scope->theTable, heapName, theRec);
 }
 
-int hashFunct(char* theName) {
-     int len,i, value;
-     value = 0;
+// to determine equality of string keys
+gboolean _keyEqualFn(gconstpointer a, gconstpointer b) {
+  int res = strcmp((char*)a, (char*)b);
 
-     len = strlen(theName);
-     for (i=0;i<len;i++)
-	  value += theName[i];
-
-     return (value % M);
+  return (res==0);
 }
 
 // Make a new scope and push it on the symbol table
 void beginScope() {
-    Scope* tempScope = newScope();              // Make a new scope
-    tempScope->theTable = newHashTable();        // Make a hash table
-    tempScope->prevScope = symTabPtr;               // Set the prev scope
-    symTabPtr = tempScope;                          // Point to the scope
+  // create a new scope
+  Scope* newScope = (Scope*)calloc(1, sizeof(Scope));
+
+  // create a new hash table that defines the scope
+  newScope->theTable = g_hash_table_new_full( g_str_hash,
+                                              _keyEqualFn,
+                                              free,
+                                              free );
+  newScope->prevScope = currentScope;
+
+  // new scope becomes the current scope
+  currentScope = newScope;
 }
 
 // Remove a scope
 void endScope() {
-    int i;
-    HashNode* tempNodeP, * tempNodeP2;
-    Scope* tempScopeP = symTabPtr;                 // Point to scope
-    symTabPtr = tempScopeP->prevScope;              // Scope is prev scope
+  // the previous scope is now the current scope
+  Scope* oldScope = currentScope;
+  currentScope = currentScope->prevScope;
 
-    for (i=0; i<M; i++) {                        // Destroy old hash table
-	tempNodeP = tempScopeP->theTable[i];
-	while (tempNodeP != NULL) {
-	    free(tempNodeP->theSemRec);
-	    free(tempNodeP->key);
-	    tempNodeP2 = tempNodeP->nextNode;
-	    free(tempNodeP);
-	    tempNodeP = tempNodeP2;
-	}
-    }
-    free(tempScopeP->theTable);
+  // TODO: Free up memory from used table
 
-    free(tempScopeP);                            // Destroy old scope
+  // free up the malloced scope
 }

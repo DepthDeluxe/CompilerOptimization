@@ -5,8 +5,10 @@
 #include "compiler.h"
 
 #include "codegen_support.h"
+#include "semantic_support.h"
 
 GHashTable* instructionTable;
+Scope*      currentScope;
 
 // Headers for all functions in this file.
 // static means the function cannot be used outside of this file
@@ -59,7 +61,7 @@ static void program(TreeNode* nodePtr) {
     SemRec* semRecPtr;
     int loc, main1, main2;
 
-    symTabPtr = nodePtr->symTabPtr;       // Get global symbol table
+    currentScope = nodePtr->scope;       // Get global symbol table
 
     // Run-time environment setup instructions
     emitRM(LD,gp,0,ac0,"Set GP");                // GP = dMem[0] = size-1
@@ -72,7 +74,7 @@ static void program(TreeNode* nodePtr) {
     emitRO(HALT,0,0,0,"Halt");                   // Stop.
 
     // provide input function
-    semRecPtr = lookup(nodePtr->line, symTabPtr, "input");
+    semRecPtr = lookup(nodePtr->line, currentScope, "input");
     semRecPtr->f.addr = emitSkip(0);
     emitRM(ST,ac0,-1,fp,"Input Function, store return addr");
     emitRO(IN,ac0,0,0,  "     Get input");
@@ -80,7 +82,7 @@ static void program(TreeNode* nodePtr) {
 
     // provide inputf function
     if ( with_float ) {
-      semRecPtr = lookup(nodePtr->line, symTabPtr, "input");
+      semRecPtr = lookup(nodePtr->line, currentScope, "input");
       semRecPtr->f.addr = emitSkip(0);
       emitRM(ST,ac0,-1,fp,"Inputf Function, store return addr");
       emitRO(INF,ac0,0,0,  "     Get input");
@@ -88,7 +90,7 @@ static void program(TreeNode* nodePtr) {
     }
 
     // provide output function
-    semRecPtr = lookup(nodePtr->line, symTabPtr, "output");
+    semRecPtr = lookup(nodePtr->line, currentScope, "output");
     semRecPtr->f.addr = emitSkip(0);
     emitRM(ST,ac0,-1,fp,"Output Function, store return addr");
     emitRM(LD,ac0,-2,fp,"     Get output");
@@ -97,7 +99,7 @@ static void program(TreeNode* nodePtr) {
 
     // provide outputf function
     if ( with_float ) {
-      semRecPtr = lookup(nodePtr->line, symTabPtr, "outputf");
+      semRecPtr = lookup(nodePtr->line, currentScope, "outputf");
       semRecPtr->f.addr = emitSkip(0);
       emitRM(ST,ac0,-1,fp,"Outputf Function, store return addr");
       emitRM(LD,ac0,-2,fp,"     Get output");
@@ -108,10 +110,10 @@ static void program(TreeNode* nodePtr) {
     declarationList(nodePtr->ptr1);                  // Code for declList
 
     emitBackup(loc);
-    emitRM(LDA,fp,-symTabPtr->used,gp,"Set FP below globals");
-    emitRM(LDA,sp,-symTabPtr->used,gp,"Set SP below globals");
+    emitRM(LDA,fp,-currentScope->used,gp,"Set FP below globals");
+    emitRM(LDA,sp,-currentScope->used,gp,"Set SP below globals");
     emitRestore();
-    semRecPtr = lookup(nodePtr->line, symTabPtr, "main");
+    semRecPtr = lookup(nodePtr->line, currentScope, "main");
     emitBackup(main2);
     emitRMAbs(LDA,pc,semRecPtr->f.addr,"Jump to main");// PC = main
     emitRestore();
@@ -149,9 +151,9 @@ static void varDeclaration(TreeNode* nodePtr) {
 static void funDeclaration(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+    semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
     semRecPtr->f.addr = emitSkip(0);           // Func code starts here
-    symTabPtr = nodePtr->symTabPtr;                  // Get current symbol table
+    currentScope = nodePtr->scope;                  // Get current symbol table
     params(nodePtr->ptr2);                     // Output params code
     emitRM(ST,ac0,-1,fp,"Function: store return address in dMem[FP-1]");
     functionStmt(nodePtr->ptr3);               // Output compStmt code
@@ -228,7 +230,7 @@ static void expressionStmt(TreeNode* nodePtr) {
 
 /* 15. compStmt -> '{' localDecl stmtList '}' */
 static void compoundStmt(TreeNode* nodePtr) {
-    symTabPtr = nodePtr->symTabPtr;           // Get current symbol table
+    currentScope = nodePtr->scope;           // Get current symbol table
     localDeclaration(nodePtr->ptr1);    // Output code for localDecl
     statementList(nodePtr->ptr2);       // Output code for stmtList
     endScope();                         // Pop scope
@@ -415,7 +417,7 @@ static void var(TreeNode* nodePtr, int rlval) {
   SemRec* semRecPtr;
   int loc, loc2;
   if (nodePtr->kind == varSingle) {
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+    semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
 
     if (rlval == 0) { // we want the lvalue, ac1 = var addr
       emitRM(LDA,ac1,semRecPtr->v.offset,semRecPtr->v.base,
@@ -450,7 +452,7 @@ static void var(TreeNode* nodePtr, int rlval) {
     emitRMAbs(JGE,ac0,loc2,"  variable: Jump if subscript >= 0");       // Jump if subscript >= 0
     emitRestore();                      // Restore instr counter
 
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+    semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
 
     if (rlval == 0) { // we want the lvalue, Get arr[exp] addr.
       if (semRecPtr->v.kind == intarr) {  // For intarr
@@ -617,7 +619,7 @@ static void factor(TreeNode* nodePtr) {
 static void call(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
-    semRecPtr = lookup(nodePtr->line, symTabPtr, nodePtr->value.string);
+    semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
     push(fp,              "Function call, save old FP");
     emitRM(LDA,sp,-1,sp,"     Save space for return addr");
 
