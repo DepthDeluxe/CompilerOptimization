@@ -100,7 +100,7 @@ typeSpec : INT
 }
 ;
 
-/* 6. funDecl -> typeSpec ID '(' params ')' funStmt  */
+/* 6. funDecl -> typeSpec ID '(' params ')' funStmt */
 funDecl : typeSpec ID '(' params ')' funStmt
 {
   $$ = $2;
@@ -111,7 +111,7 @@ funDecl : typeSpec ID '(' params ')' funStmt
 }
 ;
 
-/* 7. params -> paramList | VOID */
+/* 7. params -> paramList | VOID | nothing */
 params : paramList
 {
   $$ = newParseTreeNode();     /* Set the node. */
@@ -122,6 +122,11 @@ params : paramList
 {
    $$ = newParseTreeNode();    /* Set the node. */
    $$->kind = paramsVoid;         /* Set the kind. */
+}
+|
+{
+  $$ = newParseTreeNode();
+  $$->kind = paramsVoid;      // imply void for params
 }
 ;
 
