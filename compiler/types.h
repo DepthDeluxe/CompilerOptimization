@@ -7,16 +7,23 @@
 typedef enum {intvar, intarr, floatvar, refarr, func} types_t;
 
 // Kinds of parse tree nodes. One for each production (P1 : P2)
-typedef enum {progNormal, declListNormal, declListSingle, declVar, declFun, varDeclSingle, varDeclArray,
-      typeSpecInt, typeSpecFloat, typeSpecVoid, funDecl1, paramsNormal, paramsVoid, paramListNormal,
-      paramListSingle, paramSingle, paramArray, compStmt1, localDeclNormal, localDeclVoid,
-      stmtListNormal, stmtListVoid, funStmt1,
-      stmtExp, stmtComp, stmtSel, stmtWhile, stmtJump, stmtRet, expStmtNormal, expStmtVoid, selStmtIf,
-      selStmtIfElse, whileStmtNormal, jumpStmtBreak, jumpStmtContinue, retStmtVoid, retStmtExp, expAssign, expSimple, varSingle, varArray,
-      simpExpRelop, simpExpAdditive, relopLE, relopLT, relopGT, relopGE, relopEQ,
-      relopNE, addExpNormal, addExpTerm, addop, subop, termNormal, termFactor, mulopMult,
-      mulopDiv, factorExp, factorVar, factorCall, factorNum, factorFloat, call1, argsNormal, argsVoid,
-      argListNormal, argListSingle} nodekind_t;
+typedef enum {
+
+  progNormal,
+  declListNormal, declListSingle, declVar, declFun,
+  varDeclSingle, varDeclArray,
+  typeSpecInt, typeSpecFloat, typeSpecVoid, funDecl1, paramsNormal, paramsVoid, paramListNormal,
+  paramListSingle, paramSingle, paramArray, compStmt1, localDeclNormal, localDeclVoid,
+  stmtListNormal, stmtListVoid, funStmt1,
+  stmtExp, stmtComp, stmtSel, stmtWhile, stmtFor, stmtJump, stmtRet,
+  expStmtNormal, expStmtVoid,
+  selStmtIf, selStmtIfElse,
+  whileStmtNormal, forStmtNormal,
+  jumpStmtBreak, jumpStmtContinue, retStmtVoid, retStmtExp, expAssign, expSimple, varSingle, varArray,
+  simpExpRelop, simpExpAdditive, relopLE, relopLT, relopGT, relopGE, relopEQ,
+  relopNE, addExpNormal, addExpTerm, addop, subop, termNormal, termFactor, mulopMult,
+  mulopDiv, factorExp, factorVar, factorCall, factorNum, factorFloat, call1, argsNormal, argsVoid,
+  argListNormal, argListSingle} nodekind_t;
 
 /* *** structures for Semantic Checking ***********************************
  * type 'SemRec' (Semantic Record) contains the type and memory
@@ -82,6 +89,7 @@ typedef struct pnode {
     struct pnode* ptr1;          // Pointers to any child nodes
     struct pnode* ptr2;
     struct pnode* ptr3;
+    struct pnode* ptr4;
     int           line;          // Line number in the code
 
     int           locals_so_far; // used when making function calls

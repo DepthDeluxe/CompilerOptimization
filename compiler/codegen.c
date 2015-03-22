@@ -30,6 +30,7 @@ static void statement(TreeNode* nodePtr);
 static void expressionStmt(TreeNode* nodePtr);
 static void selectionStmt(TreeNode* nodePtr);
 static void whileStmt(TreeNode* nodePtr);
+static void forStmt(TreeNode* nodePtr);
 static void jumpStmt(TreeNode* nodePtr);
 static void returnStmt(TreeNode* nodePtr);
 static void expression(TreeNode* nodePtr, int noJump);
@@ -215,6 +216,8 @@ static void statement(TreeNode* nodePtr) {
       selectionStmt(nodePtr->ptr1);    // Output code for selStmt
     else if (nodePtr->kind == stmtWhile)
       whileStmt( nodePtr->ptr1 );
+    else if (nodePtr->kind == stmtFor)
+      forStmt( nodePtr->ptr1 );
     else if (nodePtr->kind == stmtJump)
       jumpStmt( nodePtr-> ptr1 );
     else //if (nodePtr->kind == stmtRet)
@@ -326,6 +329,72 @@ static void whileStmt( TreeNode* nodePtr ) {
   emitBackup(cndJmpLoc);
   TreeNode* expStmtNode = nodePtr->ptr1;
   TreeNode* simpExpNode = expStmtNode->ptr1;
+  if ( simpExpNode->kind == simpExpRelop ) {
+    emitOppositeSelStmt(simpExpNode->ptr2->kind, ac0, endLoc);
+  } else {
+    emitRMAbs(JEQ,ac0, endLoc,"");
+  }
+  emitRestore();
+
+  // restore the while statement values
+  whileConditionalLocation  = prevWhileCL;
+  whileJumpLocation         = prevWhileJL;
+  whileConditionalType      = prevWhileType;
+}
+
+/* forStmt -> for '(' exp ';' exp ';' exp ')' stmt */
+static void forStmt(TreeNode* nodePtr) {
+  // alias each of the different pieces
+  TreeNode* initAssign  = nodePtr->ptr1;
+  TreeNode* conditional = nodePtr->ptr2;
+  TreeNode* modifier    = nodePtr->ptr3;
+  TreeNode* statements  = nodePtr->ptr4;
+
+  // save away the previous while values
+  int prevWhileCL           = whileConditionalLocation;
+  int prevWhileJL           = whileJumpLocation;
+  nodekind_t prevWhileType  = whileConditionalType;
+
+  // emit the initial assignment
+  expression( initAssign, 0 );
+
+  // get the start of the expression
+  int startLoc = emitSkip(0);
+  whileConditionalLocation = startLoc;
+
+  // emit the conditional code
+  expression( conditional, 1 );
+
+  // store away the type of conditional
+  if ( conditional->kind        == expSimple &&
+       conditional->ptr1->kind  == simpExpRelop ) {
+    whileConditionalType = conditional->ptr1->ptr2->kind;
+  } else {
+    whileConditionalType = relopEQ;
+  }
+
+  // skip over the jump statement
+  int cndJmpLoc = emitSkip(1);
+  whileJumpLocation = cndJmpLoc;
+
+  // output the body statements
+  statement( statements );
+
+  // emit the modifier below the statement body
+  expression( modifier, 0 );
+
+  // put an unconditional jump back to the top
+  emitRM(LDC,ac0,0,0,"");
+  emitRMAbs(JEQ, ac0, startLoc,
+      "  if: Jump to else part if test is false (exp == 0), this is unconditional");
+
+  // mark the end and resume to next greatest value
+  int endLoc = emitSkip(0);
+
+  // back up and write the conditional expression as the jump
+  // statement
+  emitBackup(cndJmpLoc);
+  TreeNode* simpExpNode = conditional->ptr1;
   if ( simpExpNode->kind == simpExpRelop ) {
     emitOppositeSelStmt(simpExpNode->ptr2->kind, ac0, endLoc);
   } else {
