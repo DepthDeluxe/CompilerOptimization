@@ -1,0 +1,20 @@
+void main(void) {
+  int i;
+  int j;
+
+  i = 0;
+  while ( i < 5 ) {
+    for( j = 0; j < 5; j = j+1 ) {
+      output(i);
+
+      if ( j > 3 ) {
+        break;
+      }
+    }
+    if ( i > 3 ) {
+      break;
+    }
+
+    i = i + 1;
+  }
+}
