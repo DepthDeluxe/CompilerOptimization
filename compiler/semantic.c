@@ -23,6 +23,7 @@ static void statement(TreeNode* nodePtr);
 static void expressionStmt(TreeNode* nodePtr);
 static void selectionStmt(TreeNode* nodePtr);
 static void whileStmt(TreeNode* nodePtr);
+static void forStmt(TreeNode* nodePtr);
 static void jumpStmt(TreeNode* nodePtr);
 static void returnStmt(TreeNode* nodePtr);
 static void expression(TreeNode* nodePtr);
@@ -319,6 +320,8 @@ static void statement(TreeNode* nodePtr) {
       selectionStmt(nodePtr->ptr1);         // Check selStmt code
     else if (nodePtr->kind == stmtWhile)
       whileStmt(nodePtr->ptr1);
+    else if (nodePtr->kind == stmtFor)
+      forStmt(nodePtr->ptr1);
     else if (nodePtr->kind == stmtJump)
       jumpStmt(nodePtr->ptr1);
     else //if (nodePtr->kind == stmtRet)
@@ -367,6 +370,27 @@ static void whileStmt(TreeNode* nodePtr) {
 
   expression( nodePtr->ptr1 );
   statement( nodePtr->ptr2 );
+
+  // reset the in_while statement
+  if ( outermost_loop ) {
+    in_while = 0;
+  }
+}
+
+static void forStmt(TreeNode* nodePtr) {
+  // treat forloops just like while loops
+  int outermost_loop = !in_while;
+  if ( outermost_loop ) {
+    in_while = 1;
+  }
+
+  // process each of the expression pointers
+  expression( nodePtr->ptr1 );
+  expression( nodePtr->ptr2 );
+  expression( nodePtr->ptr3 );
+
+  // process the statements
+  statement( nodePtr->ptr4 );
 
   // reset the in_while statement
   if ( outermost_loop ) {

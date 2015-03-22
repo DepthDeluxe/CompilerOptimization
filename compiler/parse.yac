@@ -7,7 +7,7 @@
 #include "compiler.h"
 %}
 
-%token ID NUM INT FLOAT FNUM VOID IF ELSE WHILE BREAK CONTINUE RET LE LT GT GE EQ NE
+%token ID NUM INT FLOAT FNUM VOID IF ELSE WHILE FOR BREAK CONTINUE RET LE LT GT GE EQ NE
 
 %%
 /* This yacc file parses C- tokens and produces a tree.
@@ -201,7 +201,7 @@ stmtList : stmt stmtList
 }
 ;
 
-/* 13. stmt -> expStmt | compStmt | selStmt | whileStmt | jumpStmt | retStmt  */
+/* 13. stmt -> expStmt | compStmt | selStmt | whileStmt | forStmt | jumpStmt | retStmt  */
 stmt : expStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
@@ -226,6 +226,12 @@ stmt : expStmt
   $$->kind = stmtWhile;
   $$->ptr1 = $1;
 }
+| forStmt
+{
+  $$ = newParseTreeNode();
+  $$->kind = stmtFor;
+  $$->ptr1 = $1;
+}
 | jumpStmt
 {
   $$ = newParseTreeNode();
@@ -240,7 +246,8 @@ stmt : expStmt
 }
 ;
 
-/* 13a. e_stmt -> expStmt | compStmt | e_selStmt | retStmt */
+/* 13a. e_stmt -> expStmt | compStmt | selStmt | whileStmt | forStmt | jumpStmt | retStmt  */
+/* reverted for a bit */
 e_stmt : expStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
@@ -259,6 +266,24 @@ e_stmt : expStmt
   $$->kind = stmtSel;            /* Set the kind. */
   $$->ptr1 = $1;               /* Set the pointers. */
 }
+/*| whileStmt
+{
+  $$ = newParseTreeNode();
+  $$->kind = stmtWhile;
+  $$->ptr1 = $1;
+}
+| forStmt
+{
+  $$ = newParseTreeNode();
+  $$->kind = stmtFor;
+  $$->ptr1 = $1;
+}
+| jumpStmt
+{
+  $$ = newParseTreeNode();
+  $$->kind = stmtJump;
+  $$->ptr1 = $1;
+}*/
 | retStmt
 {
   $$ = newParseTreeNode();     /* Set the node. */
@@ -328,6 +353,18 @@ whileStmt : WHILE '(' exp ')' stmt
   $$->kind = whileStmtNormal;
   $$->ptr1 = $3;
   $$->ptr2 = $5;
+}
+;
+
+/* forStmt -> for '(' exp ';' exp ';' exp ')' stmt */
+forStmt : FOR '(' exp ';' exp ';' exp ')' stmt
+{
+  $$ = newParseTreeNode();
+  $$->kind = forStmtNormal;
+  $$->ptr1 = $3;
+  $$->ptr2 = $5;
+  $$->ptr3 = $7;
+  $$->ptr4 = $9;
 }
 ;
 

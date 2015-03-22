@@ -15,7 +15,7 @@ int lineno = 1;
 #define STATE4 4
 %}
 
-/* token ID NUM INT FLOAT FNUM VOID IF ELSE WHILE CONTINUE BREAK RET LE LT GT GE EQ NE */
+/* token ID NUM INT FLOAT FNUM VOID IF ELSE WHILE FOR CONTINUE BREAK RET LE LT GT GE EQ NE */
 
 letter     [a-zA-Z]
 digit      [0-9]
@@ -33,6 +33,7 @@ newline    \n
 "if"         {return IF;}
 "else"       {return ELSE;}
 "while"      {return WHILE;}
+"for"        {return FOR;}
 "break"      {return BREAK;}
 "continue"   {return CONTINUE;}
 "return"     {return RET;}
