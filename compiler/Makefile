@@ -7,8 +7,10 @@ CC = gcc
 endif
 
 # import glib into build system
-GLIB = `pkg-config --cflags --libs glib-2.0`
-CFLAGS = -std=c99 -Wall $(GLIB)
+CFLAGS = -std=c99 -Wall `pkg-config --cflags glib-2.0`
+LFLAGS = $(CFLAGS) `pkg-config --libs glib-2.0`
+
+SOURCES := y.tab.c main.c semantic.c semantic_support.c codegen.o codegen_support.c support.c profiler.c
 
 # main build command
 all: ctags cm
@@ -18,20 +20,29 @@ gcc: all
 debug: CFLAGS += -g
 debug: all
 
-lex.yy.c: scan.lex compiler.h
-	flex scan.lex
-
-y.tab.c: parse.yac lex.yy.c compiler.h
-	yacc parse.yac
+# import the dependency files
+-include $(SOURCES=.c=.d)
 
 %.o: %.c %.h
-	$(CC) $(CFLAGS) -c $<
+	$(info Buliding: $<)
+	@$(CC) $(CFLAGS) -c $<
+	@$(CC) $(CFLAGS) -MM $< -o $(@:.o=.d)
 
-cm: y.tab.o main.o semantic.o semantic_support.o codegen.o codegen_support.o support.o profiler.o
-	$(CC) $(CFLAGS) y.tab.o main.o semantic.o semantic_support.o codegen.o codegen_support.o support.o profiler.o -o cm -ly
+# generate lexer and parser
+lex.yy.c: scan.lex compiler.h
+	$(info Building lexer)
+	@flex scan.lex
+y.tab.c: parse.yac lex.yy.c compiler.h
+	$(info Building parser)
+	@yacc parse.yac
+
+cm: $(SOURCES:.c=.o)
+	$(info Linking program)
+	@$(CC) $(LFLAGS) $? -o cm
 
 ctags:
-	ctags *
+	$(info Building ctags file)
+	@ctags *
 
 clean:
-	rm -f cm lex.yy.c y.tab.c *.o tags
+	rm -f cm lex.yy.c y.tab.c *.o *.d tags
