@@ -41,12 +41,17 @@ declList : decl declList
   $$->kind = declListNormal;
   $$->ptr1 = $1;
   $$->ptr2 = $2;
+  $$->ptr3 = NULL;
+  $$->ptr4 = NULL;
 }
 | decl
 {
   $$ = newParseTreeNode();
   $$->kind = declListSingle;
   $$->ptr1 = $1;
+  $$->ptr2 = NULL;
+  $$->ptr3 = NULL;
+  $$->ptr4 = NULL;
 }
 ;
 

@@ -30,6 +30,6 @@ extern int yyparse(void);
 extern int yylex(void);
 
 // For debugging purposes
-#define _test(a,b)  if (NULL==a) fprintf(stderr, "ACCESSING NULL %s\n", b);
+#define _test(a,b)  if (NULL==a) { fprintf(stderr, "ACCESSING NULL %s\n", b); return; }
 
 #endif

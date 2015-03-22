@@ -184,25 +184,30 @@ void profileSUBADD() {
   for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
     TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
 
-    if ( inst->opCode == SUB &&
-         inst->a == inst->b ) {
+    switch( state ) {
+    case 0:
       X = inst->a;
       Y = inst->c;
 
-      state = 1;
-    } else if ( inst->opCode == ADD &&
-                inst->a == X &&
-                inst->b == X &&
-                inst->c == Y ) {
-      if ( state == 1 ) {
+      if( inst->opCode == SUB &&
+          inst->a == inst->b ) {
+        state = 1;
+      }
+      break;
+    case 1:
+      if ( inst->opCode == ADD &&
+           inst->a == X &&
+           inst->b == X &&
+           inst->c == Y ) {
+
         // nopify the instructions
         _nopifyInstruction(n-1);
         _nopifyInstruction(n);
         numIdentified++;
       }
-
       state = 0;
-    } else {
+      break;
+    default:
       state = 0;
     }
   }

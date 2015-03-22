@@ -155,6 +155,11 @@ void printNodeType(TreeNode* node) {
 
 // recurses and prints out the contents of the folder
 void printNode(TreeNode* node_ptr, GList* parent_stack) {
+  // return silently if the node_ptr is NULL
+  if ( node_ptr == NULL ) {
+    return;
+  }
+
   // add to the parent stack
   parent_stack = g_list_append(parent_stack, node_ptr);
 
@@ -207,7 +212,7 @@ void printNode(TreeNode* node_ptr, GList* parent_stack) {
   }
 
   // take off this node from the parent stack
-  parent_stack = g_list_remove( parent_stack, node_ptr );
+  g_list_remove( parent_stack, node_ptr );
 }
 
 /*
@@ -277,7 +282,8 @@ void endScope() {
   Scope* oldScope = currentScope;
   currentScope = currentScope->prevScope;
 
-  // TODO: Free up memory from used table
+  // free up memory used in the hash table
+  g_hash_table_destroy(oldScope->theTable);
 
   // free up the malloced scope
   free(oldScope);

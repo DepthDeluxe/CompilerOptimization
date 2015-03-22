@@ -26,6 +26,13 @@ TreeNode* newParseTreeNode() {
   TreeNode* temp;
   temp = (TreeNode*) myalloc(sizeof(TreeNode));
   temp->line = lineno;
+
+  // initialize pointers to NULL
+  temp->ptr1 = NULL;
+  temp->ptr2 = NULL;
+  temp->ptr3 = NULL;
+  temp->ptr4 = NULL;
+
   return temp;
 }
 
