@@ -3,7 +3,7 @@
 
 void trimAll(TreeNode* top);
 
-int trimAdditiveFolding(TreeNode* top);
+int trimFolding(TreeNode* top);
 
 #endif
 

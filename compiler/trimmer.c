@@ -4,29 +4,10 @@
 #include "trimmer.h"
 
 void trimAll(TreeNode* top) {
-  trimAdditiveFolding(top);
+  trimFolding(top);
 }
 
-int trimAdditiveFolding(TreeNode* top) {
-  // keep recursing if we don't find the node type we are looking for
-  if ( top->ptr1 != NULL ) {
-    trimAdditiveFolding(top->ptr1);
-  }
-  if ( top->ptr2 != NULL ) {
-    trimAdditiveFolding(top->ptr2);
-  }
-  if ( top->ptr3 != NULL ) {
-    trimAdditiveFolding(top->ptr3);
-  }
-  if ( top->ptr4 != NULL ) {
-    trimAdditiveFolding(top->ptr4);
-  }
-
-  // only return if there wasn't anything immediately below us
-  if ( top->kind != addExpNormal ) {
-    return 0;
-  }
-
+void _trimCheckAdditive(TreeNode* top) {
   // we found an additive expression, time to see if it consists of
   // two numbers added together
   TreeNode* left = top->ptr1;
@@ -73,9 +54,68 @@ int trimAdditiveFolding(TreeNode* top) {
     top->ptr1->ptr1 = newParseTreeNode();
     top->ptr1->ptr1->kind = factorNum;
     top->ptr1->ptr1->value.integer = sum;
-
-    return 1;
   }
+}
+
+void _trimCheckMultiplicative(TreeNode* top) {
+  // we found an additive expression, time to see if it consists of
+  // two numbers added together
+  TreeNode* left = top->ptr1;
+  TreeNode* right = top->ptr3;
+
+  int leftIsNum = 0;
+  if ( left       != NULL && left->kind == termFactor &&
+       left->ptr1 != NULL && left->ptr1->kind == factorNum ) {
+    leftIsNum = 1;
+  }
+
+  int rightIsNum = 0;
+  if ( right != NULL && right->kind == factorNum ) {
+    rightIsNum = 1;
+  }
+
+  if ( leftIsNum && rightIsNum ) {
+    int leftVal = left->ptr1->value.integer;
+    int rightVal = right->value.integer;
+
+    // compute the product of the two numbers
+    int product;
+    if ( top->ptr2->kind == mulopMult ) {
+      product = leftVal * rightVal;
+    } else {
+      product = leftVal / rightVal;
+    }
+
+    top->kind = termFactor;
+
+    top->ptr1 = newParseTreeNode();
+    top->ptr1->kind = factorNum;
+    top->ptr1->value.integer = product;
+  }
+}
+
+int trimFolding(TreeNode* top) {
+  // keep recursing if we don't find the node type we are looking for
+  if ( top->ptr1 != NULL ) {
+    trimFolding(top->ptr1);
+  }
+  if ( top->ptr2 != NULL ) {
+    trimFolding(top->ptr2);
+  }
+  if ( top->ptr3 != NULL ) {
+    trimFolding(top->ptr3);
+  }
+  if ( top->ptr4 != NULL ) {
+    trimFolding(top->ptr4);
+  }
+
+  // only return if there wasn't anything immediately below us
+  if ( top->kind == addExpNormal ) {
+    _trimCheckAdditive(top);
+  } else if ( top->kind == termNormal ) {
+    _trimCheckMultiplicative(top);
+  }
+
 
   return 0;
 }
