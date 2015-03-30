@@ -3,7 +3,8 @@ int isNCool(int n) {
 }
 
 int somethingMore(int n) {
-  int x = 5;
+  int x;
+  x = 5;
   n = x + n;
 
   return n < 437;

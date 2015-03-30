@@ -1,6 +1,5 @@
 int global;
 
-
 int somethingRT(int n) {
   int x;
   int m;
