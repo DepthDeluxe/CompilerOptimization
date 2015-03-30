@@ -94,6 +94,28 @@ void _trimCheckMultiplicative(TreeNode* top) {
   }
 }
 
+// since this one dives deep enough, use a state machine
+void _trimCheckParenthesis(TreeNode* top) {
+  // if this clusterfuck is true, then we have something that can be removed
+  if ( top != NULL && top->kind == factorExp &&
+       top->ptr1 != NULL && top->ptr1->kind == expSimple &&
+       top->ptr1->ptr1 != NULL && top->ptr1->ptr1->kind == simpExpAdditive &&
+       top->ptr1->ptr1->ptr1 != NULL && top->ptr1->ptr1->ptr1->kind == addExpTerm &&
+       top->ptr1->ptr1->ptr1->ptr1 != NULL && top->ptr1->ptr1->ptr1->ptr1->kind == termFactor &&
+       top->ptr1->ptr1->ptr1->ptr1->ptr1 != NULL && top->ptr1->ptr1->ptr1->ptr1->ptr1->kind == factorNum ) {
+    // get the number value
+    int value = top->ptr1->ptr1->ptr1->ptr1->ptr1->value.integer;
+
+    top->kind = factorNum;
+    top->value.integer = value;
+
+    top->ptr1 = NULL;
+    top->ptr2 = NULL;
+    top->ptr3 = NULL;
+    top->ptr4 = NULL;
+  }
+}
+
 int trimFolding(TreeNode* top) {
   // keep recursing if we don't find the node type we are looking for
   if ( top->ptr1 != NULL ) {
@@ -114,8 +136,9 @@ int trimFolding(TreeNode* top) {
     _trimCheckAdditive(top);
   } else if ( top->kind == termNormal ) {
     _trimCheckMultiplicative(top);
+  } else if ( top->kind == factorExp ) {
+    _trimCheckParenthesis(top);
   }
-
 
   return 0;
 }
