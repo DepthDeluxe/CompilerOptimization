@@ -7,6 +7,7 @@
 
 #include "support.h"
 #include "semantic.h"
+#include "trimmer.h"
 #include "codegen.h"
 #include "codegen_support.h"
 #include "profiler.h"
@@ -32,11 +33,14 @@ int main(int argc, char** argv) {
     }
   }
 
-  fprintf(stderr,"Creating parse tree...\n");
+  fprintf(stderr, "Creating parse tree...\n");
   yyparse();
 
-  fprintf(stderr,"Semantic checking...\n");
+  fprintf(stderr, "Semantic checking...\n");
   semanticCheck(parseTreePtr);
+
+  fprintf(stderr, "Performing tree trimming optimizations...\n");
+  trimAll(parseTreePtr);
 
   fprintf(stderr,"Generating code...\n");
   codegenSupportInit();
