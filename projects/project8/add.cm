@@ -1,0 +1,9 @@
+void main(void) {
+  int i;
+
+  while ( i < 10 ) {
+    output(4+4+4+4+4+4+4+4);
+
+    i = i + 1;
+  }
+}

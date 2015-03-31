@@ -1,0 +1,13 @@
+program               | Mem usage before (blks) | # inst before | Mem usage after | # inst after
+------------------------------------------------------------------------------------------------
+add.cm                | 6                       | 790           | 6               | 370
+addandsubtract.cm     | 6                       | 790           | 6               | 370
+mult.cm               | 6                       | 790           | 6               | 370
+multanddiv.cm         | 6                       | 790           | 6               | 370
+parenths.cm           | 7                       | 910           | 6               | 370
+addandmult.cm         | 7                       | 790           | 6               | 370
+everything.cm         | 7                       | 850           | 6               | 370
+
+As shown in the table, the constant folding at the tree level has shown to have drastic performance
+enhancements on the final product.  In the extreme case, the number of instructions taken to run
+parenths was 40.7% of the non-optimized version.

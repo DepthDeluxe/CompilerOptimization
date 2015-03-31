@@ -1,0 +1,7 @@
+In project 8, I optimized constant expressions through constant folding.  In particular, I enabled
+folding of expressions containing addition, subtraction, multiplication, division, and parenthesis.
+They all work together so an expression like "(3 + 3) * 5" should map directly to "30".
+
+In order to use this optimization, run the compiler with the "-t" command flag.  This enables
+tree trimming profiling and optimization.  This constant folding works by trimming the parse tree
+which is why it is in this section.  The profiling results should print out in the console.

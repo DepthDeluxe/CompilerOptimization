@@ -1,0 +1,12 @@
+program               | # adds          | # multiplies          | # parenths
+---------------------------------------------------------------------------
+add.cm                | 7               | 0                     | 0
+addandsubtract.cm     | 7               | 0                     | 0
+mult.cm               | 0               | 7                     | 0
+multanddiv.cm         | 0               | 7                     | 0
+parenths.cm           | 9               | 0                     | 5
+addandmult.cm         | 3               | 4                     | 0
+everything.cm         | 3               | 5                     | 6
+
+
+I will be attempting to optimize all constant adds, multiplies, and parenthesis.  In theory, all these programs should be outputting a static value that came from an expression computed at compile time.
