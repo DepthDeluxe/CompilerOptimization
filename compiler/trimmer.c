@@ -22,7 +22,7 @@ void trimAll(TreeNode* top) {
   fprintf(stderr, "  * Parenthesis: %i\n", numParenthesisFound);
 
   trimSimpleTailCall(top, 0);
-  trimInlineTailCall(top, 0);
+  //trimInlineTailCall(top, 0);     // disable while doing tail call optimization
   fprintf(stderr, "Tail Call\n");
   fprintf(stderr, "  * Simple: %i\n", numSimpleTailCallFound);
   fprintf(stderr, "  * Inline: %i\n", numInlineTailCallFound);

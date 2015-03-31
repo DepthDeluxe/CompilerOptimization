@@ -686,19 +686,28 @@ static void factor(TreeNode* nodePtr) {
 
 /* 28. call -> ID '(' args ')' */
 static void call(TreeNode* nodePtr) {
+    // get the semantic record
     SemRec* semRecPtr;
-
     semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
+
+    // push the FP to the stack and save space for the return address
     push(fp,              "Function call, save old FP");
     emitRM(LDA,sp,-1,sp,"     Save space for return addr");
 
-    args(nodePtr->ptr1);                     // Output args code
+    // output argument code
+    args(nodePtr->ptr1);
 
+    // set the SP and FP to the proper values
     emitRM(LDA,fp,semRecPtr->f.numParams+2,sp,"     Set FP to top of frame");
     emitRM(LDA,sp,-nodePtr->locals_so_far,sp, "     Set SP after locals");
 
+    // get the return address
     emitRM(LDA,ac0,1,pc,"     Get return addr");  // ac0 = return addr (pc+1)
+
+    // jump to the function we wish to call
     emitRMAbs(LDA,pc,semRecPtr->f.addr,"CALL:     Jump to function");
+
+    // restore the old SP and FP after calling
     emitRM(LDA,sp,0,fp,                "     Restore old SP");
     emitRM(LD,fp,0,fp,                 "     Restore old FP");
 }
