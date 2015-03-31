@@ -694,11 +694,13 @@ static void call(TreeNode* nodePtr) {
     push(fp,              "Function call, save old FP");
     emitRM(LDA,sp,-1,sp,"     Save space for return addr");
 
+    // set the FP right above the two things we just stored
+    emitRM(LDA, fp, 2, sp,"   Set the top of the stack frame");
+
     // output argument code
     args(nodePtr->ptr1);
 
     // set the SP and FP to the proper values
-    emitRM(LDA,fp,semRecPtr->f.numParams+2,sp,"     Set FP to top of frame");
     emitRM(LDA,sp,-nodePtr->locals_so_far,sp, "     Set SP after locals");
 
     // get the return address
