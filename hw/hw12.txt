@@ -1,0 +1,7 @@
+Steps not needed for tail call optimization:
+
+1. Save the parent FP
+4. Set the FP to the top of the frame
+5. Set the SP to after the locals
+11. Restore the parent FP
+12. Restore the parent SP
