@@ -9,6 +9,8 @@
 int numAdditiveFound = 0;
 int numMultiplicativeFound = 0;
 int numParenthesisFound = 0;
+int numSimpleTailCallFound = 0;
+int numInlineTailCallFound = 0;
 
 void trimAll(TreeNode* top) {
   fprintf(stderr, "==== Trimming Profile ====\n");
@@ -19,11 +21,17 @@ void trimAll(TreeNode* top) {
   fprintf(stderr, "  * Multiplicative: %i\n", numMultiplicativeFound);
   fprintf(stderr, "  * Parenthesis: %i\n", numParenthesisFound);
 
+  trimSimpleTailCall(top, 0);
+  trimInlineTailCall(top, 0);
+  fprintf(stderr, "Tail Call\n");
+  fprintf(stderr, "  * Simple: %i\n", numSimpleTailCallFound);
+  fprintf(stderr, "  * Inline: %i\n", numInlineTailCallFound - numSimpleTailCallFound); // inline detector also finds the simple ones
+
   fprintf(stderr, "==========================\n");
 }
 
 
-int _trimCheckAdditive(TreeNode* top) {
+void _trimCheckAdditive(TreeNode* top) {
   // we found an additive expression, time to see if it consists of
   // two numbers added together
   TreeNode* left = top->ptr1;
@@ -76,7 +84,7 @@ int _trimCheckAdditive(TreeNode* top) {
   }
 }
 
-int _trimCheckMultiplicative(TreeNode* top) {
+void _trimCheckMultiplicative(TreeNode* top) {
   // we found an additive expression, time to see if it consists of
   // two numbers added together
   TreeNode* left = top->ptr1;
@@ -117,7 +125,7 @@ int _trimCheckMultiplicative(TreeNode* top) {
 }
 
 // since this one dives deep enough, use a state machine
-int _trimCheckParenthesis(TreeNode* top) {
+void _trimCheckParenthesis(TreeNode* top) {
   // if this clusterfuck is true, then we have something that can be removed
   if ( top != NULL && top->kind == factorExp &&
        top->ptr1 != NULL && top->ptr1->kind == expSimple &&
@@ -166,3 +174,103 @@ void trimFolding(TreeNode* top) {
   }
 }
 
+void trimSimpleTailCall(TreeNode* top, int state) {
+  switch( state ) {
+  case 0:
+    // return immediately if top is null
+    if ( top == NULL ) {
+      return;
+    }
+
+    // we found a function call, now time to look up
+    if ( top->kind == retStmtExp ) {
+      trimSimpleTailCall(top->ptr1, 1);
+    } else {
+      // keep recursing until we go all the way down
+      if ( top->ptr1 != NULL ) {
+        trimSimpleTailCall(top->ptr1, 0);
+      }
+      if ( top->ptr2 != NULL ) {
+        trimSimpleTailCall(top->ptr2, 0);
+      }
+      if ( top->ptr3 != NULL ) {
+        trimSimpleTailCall(top->ptr3, 0);
+      }
+      if ( top->ptr4 != NULL ) {
+        trimSimpleTailCall(top->ptr4, 0);
+      }
+    }
+    break;
+  case 1:
+    // immediately return if top is null
+    if ( top == NULL ) {
+      return;
+    }
+
+    if ( top->kind == factorCall ) {
+      trimSimpleTailCall(top->ptr1, 2);
+    }
+    else {
+      trimSimpleTailCall(top->ptr1, 1);
+    }
+    break;
+  case 2:
+    // set the integer value to 1, meaning this should be tail call optimized
+    top->kind = callTail;
+    numSimpleTailCallFound++;
+    break;
+  }
+}
+
+void trimInlineTailCall(TreeNode* top, int state) {
+  switch( state ) {
+  case 0:
+    // return immediately if top is null
+    if ( top == NULL ) {
+      return;
+    }
+
+    // we found a function call, now time to look up
+    if ( top->kind == retStmtExp ) {
+      trimInlineTailCall(top->ptr1, 1);
+    } else {
+      // keep recursing until we go all the way down
+      if ( top->ptr1 != NULL ) {
+        trimInlineTailCall(top->ptr1, 0);
+      }
+      if ( top->ptr2 != NULL ) {
+        trimInlineTailCall(top->ptr2, 0);
+      }
+      if ( top->ptr3 != NULL ) {
+        trimInlineTailCall(top->ptr3, 0);
+      }
+      if ( top->ptr4 != NULL ) {
+        trimInlineTailCall(top->ptr4, 0);
+      }
+    }
+    break;
+  case 1:
+    // immediately return if top is null
+    if ( top == NULL ) {
+      return;
+    }
+
+    if ( top->kind == factorCall ) {
+      trimInlineTailCall(top->ptr1, 2);
+    }
+    else {
+      if ( top->ptr1 != NULL ) {
+        trimInlineTailCall(top->ptr1, 1);
+      }
+      if ( top->ptr3 != NULL ) {
+        trimInlineTailCall(top->ptr3, 1);
+      }
+    }
+    break;
+  case 2:
+    // set the integer value to 1, meaning this should be tail call optimized
+    top->kind = callTail;
+    numInlineTailCallFound++;
+    break;
+  }
+}
