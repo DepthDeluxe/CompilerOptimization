@@ -17,7 +17,8 @@
 #define M 11
 
 // options
-int with_float;
+extern int with_float;
+extern int with_tree_trimming;
 
 extern ParseTree     parseTreePtr;
 extern int           lineno;
