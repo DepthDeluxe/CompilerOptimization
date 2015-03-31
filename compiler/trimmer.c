@@ -1,13 +1,29 @@
+#include <stdio.h>
+
 #include "types.h"
 #include "support.h"
 
 #include "trimmer.h"
 
+// keeps track of the number of folded found
+int numAdditiveFound = 0;
+int numMultiplicativeFound = 0;
+int numParenthesisFound = 0;
+
 void trimAll(TreeNode* top) {
+  fprintf(stderr, "==== Trimming Profile ====\n");
+
   trimFolding(top);
+  fprintf(stderr, "Folding\n");
+  fprintf(stderr, "  * Additive: %i\n", numAdditiveFound);
+  fprintf(stderr, "  * Multiplicative: %i\n", numMultiplicativeFound);
+  fprintf(stderr, "  * Parenthesis: %i\n", numParenthesisFound);
+
+  fprintf(stderr, "==========================\n");
 }
 
-void _trimCheckAdditive(TreeNode* top) {
+
+int _trimCheckAdditive(TreeNode* top) {
   // we found an additive expression, time to see if it consists of
   // two numbers added together
   TreeNode* left = top->ptr1;
@@ -54,10 +70,13 @@ void _trimCheckAdditive(TreeNode* top) {
     top->ptr1->ptr1 = newParseTreeNode();
     top->ptr1->ptr1->kind = factorNum;
     top->ptr1->ptr1->value.integer = sum;
+
+    // increment the profile counter for number additive found
+    numAdditiveFound++;
   }
 }
 
-void _trimCheckMultiplicative(TreeNode* top) {
+int _trimCheckMultiplicative(TreeNode* top) {
   // we found an additive expression, time to see if it consists of
   // two numbers added together
   TreeNode* left = top->ptr1;
@@ -91,11 +110,14 @@ void _trimCheckMultiplicative(TreeNode* top) {
     top->ptr1 = newParseTreeNode();
     top->ptr1->kind = factorNum;
     top->ptr1->value.integer = product;
+
+    // increment the profile counter for number multiplicative found
+    numMultiplicativeFound++;
   }
 }
 
 // since this one dives deep enough, use a state machine
-void _trimCheckParenthesis(TreeNode* top) {
+int _trimCheckParenthesis(TreeNode* top) {
   // if this clusterfuck is true, then we have something that can be removed
   if ( top != NULL && top->kind == factorExp &&
        top->ptr1 != NULL && top->ptr1->kind == expSimple &&
@@ -113,10 +135,13 @@ void _trimCheckParenthesis(TreeNode* top) {
     top->ptr2 = NULL;
     top->ptr3 = NULL;
     top->ptr4 = NULL;
+
+    // increment the counter for number of parenthesis found
+    numParenthesisFound++;
   }
 }
 
-int trimFolding(TreeNode* top) {
+void trimFolding(TreeNode* top) {
   // keep recursing if we don't find the node type we are looking for
   if ( top->ptr1 != NULL ) {
     trimFolding(top->ptr1);
@@ -139,7 +164,5 @@ int trimFolding(TreeNode* top) {
   } else if ( top->kind == factorExp ) {
     _trimCheckParenthesis(top);
   }
-
-  return 0;
 }
 
