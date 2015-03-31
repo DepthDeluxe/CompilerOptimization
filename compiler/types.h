@@ -22,7 +22,9 @@ typedef enum {
   jumpStmtBreak, jumpStmtContinue, retStmtVoid, retStmtExp, expAssign, expSimple, varSingle, varArray,
   simpExpRelop, simpExpAdditive, relopLE, relopLT, relopGT, relopGE, relopEQ,
   relopNE, addExpNormal, addExpTerm, addop, subop, termNormal, termFactor, mulopMult,
-  mulopDiv, factorExp, factorVar, factorCall, factorNum, factorFloat, call1, callTail, argsNormal, argsVoid,
+  mulopDiv, factorExp, factorVar, factorCall, factorNum, factorFloat,
+  call1, callTailSimple, callTailInline,
+  argsNormal, argsVoid,
   argListNormal, argListSingle} nodekind_t;
 
 /* *** structures for Semantic Checking ***********************************

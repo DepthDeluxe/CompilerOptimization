@@ -25,8 +25,7 @@ void trimAll(TreeNode* top) {
   trimInlineTailCall(top, 0);
   fprintf(stderr, "Tail Call\n");
   fprintf(stderr, "  * Simple: %i\n", numSimpleTailCallFound);
-  fprintf(stderr, "  * Inline: %i\n", numInlineTailCallFound - numSimpleTailCallFound); // inline detector also finds the simple ones
-
+  fprintf(stderr, "  * Inline: %i\n", numInlineTailCallFound);
   fprintf(stderr, "==========================\n");
 }
 
@@ -216,7 +215,7 @@ void trimSimpleTailCall(TreeNode* top, int state) {
     break;
   case 2:
     // set the integer value to 1, meaning this should be tail call optimized
-    top->kind = callTail;
+    top->kind = callTailSimple;
     numSimpleTailCallFound++;
     break;
   }
@@ -269,8 +268,10 @@ void trimInlineTailCall(TreeNode* top, int state) {
     break;
   case 2:
     // set the integer value to 1, meaning this should be tail call optimized
-    top->kind = callTail;
-    numInlineTailCallFound++;
+    if ( top->kind == call1 ) {
+      top->kind = callTailInline;
+      numInlineTailCallFound++;
+    }
     break;
   }
 }
