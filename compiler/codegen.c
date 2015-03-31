@@ -690,12 +690,17 @@ static void call(TreeNode* nodePtr) {
     SemRec* semRecPtr;
     semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
 
-    // push the FP to the stack and save space for the return address
-    push(fp,              "Function call, save old FP");
-    emitRM(LDA,sp,-1,sp,"     Save space for return addr");
+    if ( nodePtr->kind == call1 ) {
+      // push the FP to the stack and save space for the return address
+      push(fp,              "Function call, save old FP");
+      emitRM(LDA,sp,-1,sp,"     Save space for return addr");
 
-    // set the FP right above the two things we just stored
-    emitRM(LDA, fp, 2, sp,"   Set the top of the stack frame");
+      // set the FP right above the two things we just stored
+      emitRM(LDA, fp, 2, sp,"   Set the top of the stack frame");
+    } else {
+      // move the SP back to the FP+2
+      emitRM(LDA, sp, 2, fp, "  Reset the SP to below the FP");
+    }
 
     // output argument code
     args(nodePtr->ptr1);
@@ -704,7 +709,11 @@ static void call(TreeNode* nodePtr) {
     emitRM(LDA,sp,-nodePtr->locals_so_far,sp, "     Set SP after locals");
 
     // get the return address
-    emitRM(LDA,ac0,1,pc,"     Get return addr");  // ac0 = return addr (pc+1)
+    if ( nodePtr->kind == call1 ) {
+      emitRM(LDA,ac0,1,pc,"     Get return addr");  // ac0 = return addr (pc+1)
+    } else {
+      emitRM(LD, ac0, 1, fp,"      Reuse the old RA when we return");
+    }
 
     // jump to the function we wish to call
     emitRMAbs(LDA,pc,semRecPtr->f.addr,"CALL:     Jump to function");
