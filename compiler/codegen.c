@@ -255,7 +255,7 @@ static void selectionStmt(TreeNode* nodePtr) {
       if ( simpExpNode->kind == simpExpRelop ) {
         emitOppositeSelStmt(simpExpNode->ptr2->kind, ac0, endLoc);
       } else {
-        emitRMAbs(JEQ,ac0,endLoc,"  testts");     // Jump to end
+        emitRMAbs(JEQ,ac0,endLoc,"  tests");     // Jump to end
       }
       emitRestore();                 // Restore numbering
     } else { //if (nodePtr->kind == selStmtIfElse)
@@ -696,23 +696,27 @@ static void call(TreeNode* nodePtr) {
       emitRM(LDA,sp,-1,sp,"     Save space for return addr");
 
       // set the FP right above the two things we just stored
-      emitRM(LDA, fp, 2, sp,"   Set the top of the stack frame");
+      //emitRM(LDA, fp, 2, sp,"   Set the top of the stack frame");
     } else {
-      // move the SP back to the FP+2
-      emitRM(LDA, sp, 2, fp, "  Reset the SP to below the FP");
+      // move the SP back right below the FP
+      emitRM(LDA, sp, -3, fp, "  Reset the SP to below the FP");
     }
 
     // output argument code
     args(nodePtr->ptr1);
 
     // set the SP and FP to the proper values
+    // only set the FP if we are creating a new frame, otherwise use the current one
+    if ( nodePtr->kind == call1 ) {
+      emitRM(LDA, fp, semRecPtr->f.numParams+2, sp,"   Set the top of the stack frame");
+    }
     emitRM(LDA,sp,-nodePtr->locals_so_far,sp, "     Set SP after locals");
 
     // get the return address
     if ( nodePtr->kind == call1 ) {
       emitRM(LDA,ac0,1,pc,"     Get return addr");  // ac0 = return addr (pc+1)
     } else {
-      emitRM(LD, ac0, 1, fp,"      Reuse the old RA when we return");
+      emitRM(LD, ac0, -1, fp,"      Reuse the old RA when we return");
     }
 
     // jump to the function we wish to call
