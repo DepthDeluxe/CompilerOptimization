@@ -22,7 +22,7 @@ void trimAll(TreeNode* top) {
   fprintf(stderr, "  * Parenthesis: %i\n", numParenthesisFound);
 
   trimSimpleTailCall(top, 0);
-  //trimInlineTailCall(top, 0);     // disable while doing tail call optimization
+  trimInlineTailCall(top);
   fprintf(stderr, "Tail Call\n");
   fprintf(stderr, "  * Simple: %i\n", numSimpleTailCallFound);
   fprintf(stderr, "  * Inline: %i\n", numInlineTailCallFound);
@@ -221,57 +221,115 @@ void trimSimpleTailCall(TreeNode* top, int state) {
   }
 }
 
-void trimInlineTailCall(TreeNode* top, int state) {
-  switch( state ) {
+// detects whether or not there is an inline call within
+// a return statement
+int _trimDetectInlineInReturn(TreeNode* nodePtr, int state) {
+  if ( nodePtr == NULL ) return 0;
+
+  switch ( state ) {
   case 0:
-    // return immediately if top is null
-    if ( top == NULL ) {
-      return;
+    if ( nodePtr->kind == addExpNormal ||
+         nodePtr->kind == termNormal ) {
+      state = 1;
     }
-
-    // we found a function call, now time to look up
-    if ( top->kind == retStmtExp ) {
-      trimInlineTailCall(top->ptr1, 1);
-    } else {
-      // keep recursing until we go all the way down
-      if ( top->ptr1 != NULL ) {
-        trimInlineTailCall(top->ptr1, 0);
-      }
-      if ( top->ptr2 != NULL ) {
-        trimInlineTailCall(top->ptr2, 0);
-      }
-      if ( top->ptr3 != NULL ) {
-        trimInlineTailCall(top->ptr3, 0);
-      }
-      if ( top->ptr4 != NULL ) {
-        trimInlineTailCall(top->ptr4, 0);
-      }
-    }
-    break;
   case 1:
-    // immediately return if top is null
-    if ( top == NULL ) {
-      return;
+    if ( nodePtr->kind == call1 ) {
+      return 2;
+    }
+  }
+
+  if ( nodePtr->ptr1 != NULL ) {
+    int retState = _trimDetectInlineInReturn(nodePtr->ptr1, state);
+    if ( retState == 2 ) return 2;
+  }
+  if ( nodePtr->ptr3 != NULL ) {
+    int retState = _trimDetectInlineInReturn(nodePtr->ptr3, state);
+    if ( retState == 2 ) return 2;
+  }
+
+  return state;
+}
+// detects whether or not there is a constant return value
+int _trimDetectConstantInReturn(TreeNode* nodePtr) {
+  if ( nodePtr == NULL ||
+       nodePtr->ptr1 == NULL ) return 0;
+
+  TreeNode* retStmtPtr = nodePtr->ptr1;
+  if ( retStmtPtr->kind == retStmtVoid ) return 0;
+
+  // if the return statement value is a number, then true
+  TreeNode* expPtr = retStmtPtr->ptr1;
+  if ( expPtr != NULL && expPtr->kind == expSimple &&
+       expPtr->ptr1 != NULL && expPtr->ptr1->kind == simpExpAdditive &&
+       expPtr->ptr1->ptr1 != NULL && expPtr->ptr1->ptr1->kind == addExpTerm &&
+       expPtr->ptr1->ptr1->ptr1 != NULL && expPtr->ptr1->ptr1->ptr1->kind == termFactor &&
+       expPtr->ptr1->ptr1->ptr1->ptr1 != NULL && expPtr->ptr1->ptr1->ptr1->ptr1->kind == factorNum ) {
+    return 1;
+  }
+
+  return 0;
+}
+
+GList* _trimInlineList = NULL;
+GList* _trimInlineConstantList = NULL;
+void _trimInlineFind(TreeNode* nodePtr) {
+  if ( nodePtr == NULL ) return;
+
+  // check to see if we match inline
+  int res = _trimDetectInlineInReturn(nodePtr, 0);
+  if ( res ) {
+    _trimInlineList = g_list_append(_trimInlineList, nodePtr);
+  }
+
+  // check to see if we match constant return
+  res = _trimDetectConstantInReturn(nodePtr);
+  if ( res == 2 ) {
+    _trimInlineConstantList = g_list_append(_trimInlineConstantList, nodePtr);
+  }
+
+  // crawl the tree to find matches
+  if ( nodePtr->ptr1 != NULL ) {
+    _trimInlineFind(nodePtr->ptr1);
+  }
+  if ( nodePtr->ptr2 != NULL ) {
+    _trimInlineFind(nodePtr->ptr2);
+  }
+  if ( nodePtr->ptr3 != NULL ) {
+    _trimInlineFind(nodePtr->ptr3);
+  }
+  if ( nodePtr->ptr4 != NULL ) {
+    _trimInlineFind(nodePtr->ptr4);
+  }
+}
+
+void _trimInlineTailCallInFunction(TreeNode* top) {
+  // detect an inline tail call, don't do anything if we didn't find one
+  _trimInlineFind(top);
+
+  // only do things if the length of the inline list is greater than 1
+  int inlineLen = g_list_length(_trimInlineList);
+  if ( inlineLen > 0 ) {
+
+    // increment the number of inlines found
+    numInlineTailCallFound++;
+  }
+
+  // blank out GLists when we are done using them
+  _trimInlineList = NULL;
+  _trimInlineConstantList = NULL;
+}
+void trimInlineTailCall(TreeNode* top) {
+  // the start of the declList is the ptr1 of the top
+  TreeNode* nodePtr = top->ptr1;
+  while ( nodePtr->ptr2 ) {
+    // run InFunction function for all function declarations
+    if ( nodePtr->ptr1 != NULL && nodePtr->ptr1->kind == declFun ) {
+      _trimInlineTailCallInFunction(nodePtr->ptr1);
     }
 
-    if ( top->kind == factorCall ) {
-      trimInlineTailCall(top->ptr1, 2);
+    // if there are more decls in decl list, then move this again
+    if ( nodePtr->ptr2 != NULL ) {
+      nodePtr = nodePtr->ptr2;
     }
-    else {
-      if ( top->ptr1 != NULL ) {
-        trimInlineTailCall(top->ptr1, 1);
-      }
-      if ( top->ptr3 != NULL ) {
-        trimInlineTailCall(top->ptr3, 1);
-      }
-    }
-    break;
-  case 2:
-    // set the integer value to 1, meaning this should be tail call optimized
-    if ( top->kind == call1 ) {
-      top->kind = callTailInline;
-      numInlineTailCallFound++;
-    }
-    break;
   }
 }
