@@ -1,3 +1,5 @@
+NOTE: To enable profiling of tail calls, use '-t' flag.  This will turn on all tree trimming profiling / optimizations.
+
 For this project, I decided to profile simple tail calls, inline tail calls, and arithmatic tail calls.  Examples are listed below.
 
 Simple Tail Call
