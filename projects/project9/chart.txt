@@ -1,0 +1,38 @@
+For this project, I decided to profile simple tail calls, inline tail calls, and arithmatic tail calls.  Examples are listed below.
+
+Simple Tail Call
+return func(x-1);
+
+Inline Tail Call
+return func(x-1) * 2;
+return func(x-1) - 1;
+return func(x-1) * 2 + 3;
+
+Arithmatic Tail Call
+return func(x-1) + func(x-2);
+return func(x-1) + func(x-2) + 3;
+
+Results:
+I profiled off of the handout programs that are provided in the handoutPrograms/ folder in the root of this project.
+
+Program       | # Simple | # Inline | # Arithmetic
+--------------------------------------------------
+blank.cm      | 0        | 0        | 0
+block.cm      | 0        | 0        | 0
+call.cm       | 1        | 0        | 0
+euclid.cm     | 1        | 0        | 0
+fact_rec.cm   | 0        | 1        | 0
+fact_tr.cm    | 2        | 0        | 0
+fib_rec.cm    | 0        | 0        | 1
+fib_tr.cm     | 2        | 0        | 0
+for_test.cm   | 0        | 0        | 0
+hello.cm      | 0        | 0        | 0
+hi.cm         | 0        | 0        | 0
+rec.cm        | 0        | 1        | 0
+RegisterSetup.| 0        | 0        | 0
+ret.cm        | 0        | 0        | 0
+sample.cm     | 0        | 0        | 0
+selsort.cm    | 0        | 0        | 0
+tailcall.cm   | 1        | 0        | 0
+=================================================
+TOTAL         | 7        | 2        | 1
