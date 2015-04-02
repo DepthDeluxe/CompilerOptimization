@@ -206,7 +206,6 @@ int _trimDetectArithmeticCombinationInReturn(TreeNode* nodePtr, int state) {
   // state 1: found one addExp/term, looking for call
   // state 2: found one call
   // state 3: found another call
-  // state 4: error state
   switch ( state ) {
   case 0:
     if ( nodePtr->kind == addExpNormal ||
@@ -224,14 +223,13 @@ int _trimDetectArithmeticCombinationInReturn(TreeNode* nodePtr, int state) {
       state = 3;
     }
     break;
-  case 3:
+  default:
     state = 3;
     break;
-  default:
-    state = 4;
   }
 
-  if ( nodePtr->kind == call1 ) {
+  // don't look in other calls
+  if ( nodePtr->kind != call1 ) {
     state = _trimDetectArithmeticCombinationInReturn(nodePtr->ptr1, state);
     state = _trimDetectArithmeticCombinationInReturn(nodePtr->ptr2, state);
     state = _trimDetectArithmeticCombinationInReturn(nodePtr->ptr3, state);
