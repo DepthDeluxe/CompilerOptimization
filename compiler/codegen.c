@@ -685,6 +685,7 @@ static void factor(TreeNode* nodePtr) {
 }
 
 /* 28. call -> ID '(' args ')' */
+// TODO: fix call generation so that tail call optimization works
 static void call(TreeNode* nodePtr) {
     // get the semantic record
     SemRec* semRecPtr;
@@ -699,7 +700,7 @@ static void call(TreeNode* nodePtr) {
       //emitRM(LDA, fp, 2, sp,"   Set the top of the stack frame");
     } else {
       // move the SP back right below the FP
-      emitRM(LDA, sp, -3, fp, "  Reset the SP to below the FP");
+      emitRM(LDA, sp, -2, fp, "  Reset the SP to below the FP");
     }
 
     // output argument code

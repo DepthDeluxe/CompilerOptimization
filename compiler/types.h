@@ -23,7 +23,7 @@ typedef enum {
   simpExpRelop, simpExpAdditive, relopLE, relopLT, relopGT, relopGE, relopEQ,
   relopNE, addExpNormal, addExpTerm, addop, subop, termNormal, termFactor, mulopMult,
   mulopDiv, factorExp, factorVar, factorCall, factorNum, factorFloat,
-  call1, callTailSimple, callTailInline,
+  call1, callTail,
   argsNormal, argsVoid,
   argListNormal, argListSingle} nodekind_t;
 
