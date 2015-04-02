@@ -224,28 +224,38 @@ void trimSimpleTailCall(TreeNode* top, int state) {
 // detects whether or not there is an inline call within
 // a return statement
 int _trimDetectInlineInReturn(TreeNode* nodePtr, int state) {
-  if ( nodePtr == NULL ) return 0;
+  if ( nodePtr == NULL ) return state;
 
+  // state 0: still looking for an addExp or term
+  // state 1: found addExp/term, looking for call
+  // state 2: found one call, success state
+  // state 3: found another call, fail state
   switch ( state ) {
   case 0:
     if ( nodePtr->kind == addExpNormal ||
          nodePtr->kind == termNormal ) {
       state = 1;
     }
+    break;
   case 1:
     if ( nodePtr->kind == call1 ) {
-      return 2;
+      state = 2;
     }
+    break;
+  case 2:
+    // go into state 3 (too many state) if we found
+    // more than one function call
+    if ( nodePtr->kind == call1 ) {
+      state = 3;
+    }
+    break;
+  default:
+    state = 3;
   }
 
-  if ( nodePtr->ptr1 != NULL ) {
-    int retState = _trimDetectInlineInReturn(nodePtr->ptr1, state);
-    if ( retState == 2 ) return 2;
-  }
-  if ( nodePtr->ptr3 != NULL ) {
-    int retState = _trimDetectInlineInReturn(nodePtr->ptr3, state);
-    if ( retState == 2 ) return 2;
-  }
+  // unconditionally search recursively
+  state = _trimDetectInlineInReturn(nodePtr->ptr1, state);
+  state = _trimDetectInlineInReturn(nodePtr->ptr3, state);
 
   return state;
 }
@@ -272,39 +282,34 @@ int _trimDetectConstantInReturn(TreeNode* nodePtr) {
 
 GList* _trimInlineList = NULL;
 GList* _trimInlineConstantList = NULL;
-void _trimInlineFind(TreeNode* nodePtr) {
+GList* _trimArithmeticCombinationList = NULL;
+void _trimHardTRFind(TreeNode* nodePtr) {
   if ( nodePtr == NULL ) return;
 
   // check to see if we match inline
   int res = _trimDetectInlineInReturn(nodePtr, 0);
-  if ( res ) {
+  if ( res == 2 ) {
     _trimInlineList = g_list_append(_trimInlineList, nodePtr);
   }
 
   // check to see if we match constant return
   res = _trimDetectConstantInReturn(nodePtr);
-  if ( res == 2 ) {
+  if ( res ) {
     _trimInlineConstantList = g_list_append(_trimInlineConstantList, nodePtr);
   }
 
-  // crawl the tree to find matches
-  if ( nodePtr->ptr1 != NULL ) {
-    _trimInlineFind(nodePtr->ptr1);
-  }
-  if ( nodePtr->ptr2 != NULL ) {
-    _trimInlineFind(nodePtr->ptr2);
-  }
-  if ( nodePtr->ptr3 != NULL ) {
-    _trimInlineFind(nodePtr->ptr3);
-  }
-  if ( nodePtr->ptr4 != NULL ) {
-    _trimInlineFind(nodePtr->ptr4);
+  // crawl the tree to find matches - only delve down to the return statement level
+  if ( nodePtr->kind != stmtRet ) {
+    _trimHardTRFind(nodePtr->ptr1);
+    _trimHardTRFind(nodePtr->ptr2);
+    _trimHardTRFind(nodePtr->ptr3);
+    _trimHardTRFind(nodePtr->ptr4);
   }
 }
 
 void _trimInlineTailCallInFunction(TreeNode* top) {
   // detect an inline tail call, don't do anything if we didn't find one
-  _trimInlineFind(top);
+  _trimHardTRFind(top);
 
   // only do things if the length of the inline list is greater than 1
   int inlineLen = g_list_length(_trimInlineList);
