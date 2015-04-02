@@ -5,8 +5,7 @@ void trimAll(TreeNode* top);
 
 void trimFolding(TreeNode* top);
 
-void trimSimpleTailCall(TreeNode* top, int state);
-void trimInlineTailCall(TreeNode* top);
+void trimTailCall(TreeNode* top);
 
 #endif
 

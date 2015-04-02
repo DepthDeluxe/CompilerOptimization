@@ -9,8 +9,11 @@
 int numAdditiveFound = 0;
 int numMultiplicativeFound = 0;
 int numParenthesisFound = 0;
+
+// tail calls
 int numSimpleTailCallFound = 0;
 int numInlineTailCallFound = 0;
+int numArithmeticTailCallFound = 0;
 
 void trimAll(TreeNode* top) {
   fprintf(stderr, "==== Trimming Profile ====\n");
@@ -21,11 +24,11 @@ void trimAll(TreeNode* top) {
   fprintf(stderr, "  * Multiplicative: %i\n", numMultiplicativeFound);
   fprintf(stderr, "  * Parenthesis: %i\n", numParenthesisFound);
 
-  trimSimpleTailCall(top, 0);
-  trimInlineTailCall(top);
+  trimTailCall(top);
   fprintf(stderr, "Tail Call\n");
   fprintf(stderr, "  * Simple: %i\n", numSimpleTailCallFound);
   fprintf(stderr, "  * Inline: %i\n", numInlineTailCallFound);
+  fprintf(stderr, "  * Arithmetic: %i\n", numArithmeticTailCallFound);
   fprintf(stderr, "==========================\n");
 }
 
@@ -173,52 +176,68 @@ void trimFolding(TreeNode* top) {
   }
 }
 
-void trimSimpleTailCall(TreeNode* top, int state) {
-  switch( state ) {
-  case 0:
-    // return immediately if top is null
-    if ( top == NULL ) {
-      return;
-    }
+// looks for an extremely simple tail call
+int _trimDetectSimpleInReturn(TreeNode* top) {
+  // if the tree structure looks just like this, then we have a simple tail call
+  // do the magic!!
+  if ( top != NULL &&
+       top->ptr1 != NULL && top->ptr1->kind == retStmtExp &&
+       top->ptr1->ptr1 != NULL && top->ptr1->ptr1->kind == expSimple &&
+       top->ptr1->ptr1->ptr1 != NULL && top->ptr1->ptr1->ptr1->kind == simpExpAdditive &&
+       top->ptr1->ptr1->ptr1->ptr1 != NULL && top->ptr1->ptr1->ptr1->ptr1->kind == addExpTerm &&
+       top->ptr1->ptr1->ptr1->ptr1->ptr1 != NULL && top->ptr1->ptr1->ptr1->ptr1->ptr1->kind == termFactor &&
+       top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1 != NULL && top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->kind == factorCall &&
+       top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1 != NULL && top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->kind == call1 ) {
 
-    // we found a function call, now time to look up
-    if ( top->kind == retStmtExp ) {
-      trimSimpleTailCall(top->ptr1, 1);
-    } else {
-      // keep recursing until we go all the way down
-      if ( top->ptr1 != NULL ) {
-        trimSimpleTailCall(top->ptr1, 0);
-      }
-      if ( top->ptr2 != NULL ) {
-        trimSimpleTailCall(top->ptr2, 0);
-      }
-      if ( top->ptr3 != NULL ) {
-        trimSimpleTailCall(top->ptr3, 0);
-      }
-      if ( top->ptr4 != NULL ) {
-        trimSimpleTailCall(top->ptr4, 0);
-      }
+    // mark that it's a simple tail call so we can process it later
+    top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->kind == callTailSimple;
+    return 1;
+  }
+
+  return 0;
+}
+
+// detects an arithmetic combination in a function
+int _trimDetectArithmeticCombinationInReturn(TreeNode* nodePtr, int state) {
+  if ( nodePtr == NULL ) return state;
+
+  // state 0: still looking for an addExp or term
+  // state 1: found one addExp/term, looking for call
+  // state 2: found one call
+  // state 3: found another call
+  // state 4: error state
+  switch ( state ) {
+  case 0:
+    if ( nodePtr->kind == addExpNormal ||
+         nodePtr->kind == termNormal ) {
+      state = 1;
     }
     break;
   case 1:
-    // immediately return if top is null
-    if ( top == NULL ) {
-      return;
-    }
-
-    if ( top->kind == factorCall ) {
-      trimSimpleTailCall(top->ptr1, 2);
-    }
-    else {
-      trimSimpleTailCall(top->ptr1, 1);
+    if ( nodePtr->kind == call1 ) {
+      state = 2;
     }
     break;
   case 2:
-    // set the integer value to 1, meaning this should be tail call optimized
-    top->kind = callTailSimple;
-    numSimpleTailCallFound++;
+    if ( nodePtr->kind == call1 ) {
+      state = 3;
+    }
     break;
+  case 3:
+    state = 3;
+    break;
+  default:
+    state = 4;
   }
+
+  if ( nodePtr->kind == call1 ) {
+    state = _trimDetectArithmeticCombinationInReturn(nodePtr->ptr1, state);
+    state = _trimDetectArithmeticCombinationInReturn(nodePtr->ptr2, state);
+    state = _trimDetectArithmeticCombinationInReturn(nodePtr->ptr3, state);
+    state = _trimDetectArithmeticCombinationInReturn(nodePtr->ptr4, state);
+  }
+
+  return state;
 }
 
 // detects whether or not there is an inline call within
@@ -244,18 +263,23 @@ int _trimDetectInlineInReturn(TreeNode* nodePtr, int state) {
     break;
   case 2:
     // go into state 3 (too many state) if we found
-    // more than one function call
+    // more than one function call, since state 3 error,
+    // no need for more recursion
     if ( nodePtr->kind == call1 ) {
-      state = 3;
+      return 3;
     }
     break;
   default:
-    state = 3;
+    return 3;
   }
 
-  // unconditionally search recursively
-  state = _trimDetectInlineInReturn(nodePtr->ptr1, state);
-  state = _trimDetectInlineInReturn(nodePtr->ptr3, state);
+  // don't search inside other calls
+  if ( nodePtr->kind != call1 ) {
+    state = _trimDetectInlineInReturn(nodePtr->ptr1, state);
+    state = _trimDetectInlineInReturn(nodePtr->ptr2, state);
+    state = _trimDetectInlineInReturn(nodePtr->ptr3, state);
+    state = _trimDetectInlineInReturn(nodePtr->ptr4, state);
+  }
 
   return state;
 }
@@ -280,22 +304,42 @@ int _trimDetectConstantInReturn(TreeNode* nodePtr) {
   return 0;
 }
 
+GList* _trimSimpleList = NULL;
+GList* _trimConstantList = NULL;
 GList* _trimInlineList = NULL;
-GList* _trimInlineConstantList = NULL;
 GList* _trimArithmeticCombinationList = NULL;
 void _trimHardTRFind(TreeNode* nodePtr) {
   if ( nodePtr == NULL ) return;
 
-  // check to see if we match inline
-  int res = _trimDetectInlineInReturn(nodePtr, 0);
-  if ( res == 2 ) {
-    _trimInlineList = g_list_append(_trimInlineList, nodePtr);
-  }
+  // only run the tests on return statements
+  if ( nodePtr->kind == stmtRet ) {
 
-  // check to see if we match constant return
-  res = _trimDetectConstantInReturn(nodePtr);
-  if ( res ) {
-    _trimInlineConstantList = g_list_append(_trimInlineConstantList, nodePtr);
+    // see if it is a constant return
+    int res = _trimDetectConstantInReturn(nodePtr);
+    if ( res ) {
+      _trimConstantList = g_list_append(_trimConstantList, nodePtr);
+    } else {
+
+      // check inline return, 2 is the success state
+      res = _trimDetectInlineInReturn(nodePtr, 0);
+      if ( res == 2 ) {
+        _trimInlineList = g_list_append(_trimInlineList, nodePtr);
+      } else {
+
+        // check for arithmetic combo
+        res = _trimDetectArithmeticCombinationInReturn(nodePtr, 0);
+        if ( res == 3 ) {
+          _trimArithmeticCombinationList = g_list_append(_trimArithmeticCombinationList, nodePtr);
+        } else {
+
+          // check for a simple tr
+          res = _trimDetectSimpleInReturn(nodePtr);
+          if ( res ) {
+            _trimSimpleList = g_list_append(_trimSimpleList, nodePtr);
+          }
+        }
+      }
+    }
   }
 
   // crawl the tree to find matches - only delve down to the return statement level
@@ -312,18 +356,18 @@ void _trimInlineTailCallInFunction(TreeNode* top) {
   _trimHardTRFind(top);
 
   // only do things if the length of the inline list is greater than 1
-  int inlineLen = g_list_length(_trimInlineList);
-  if ( inlineLen > 0 ) {
-
-    // increment the number of inlines found
-    numInlineTailCallFound++;
-  }
+  numSimpleTailCallFound += g_list_length(_trimSimpleList);
+  numInlineTailCallFound += g_list_length(_trimInlineList);
+  numArithmeticTailCallFound += g_list_length(_trimArithmeticCombinationList);
 
   // blank out GLists when we are done using them
+  _trimSimpleList = NULL;
+  _trimConstantList = NULL;
   _trimInlineList = NULL;
-  _trimInlineConstantList = NULL;
+  _trimArithmeticCombinationList = NULL;
 }
-void trimInlineTailCall(TreeNode* top) {
+
+void trimTailCall(TreeNode* top) {
   // the start of the declList is the ptr1 of the top
   TreeNode* nodePtr = top->ptr1;
   while ( nodePtr->ptr2 ) {
