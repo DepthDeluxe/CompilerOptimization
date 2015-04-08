@@ -1,0 +1,5 @@
+Program       | nonoptimized  | optimized | % change
+-----------------------------------------------------
+fact_tr.cm    | 11436         | 9936      | -13.1
+fib_tr.cm     | 1225          | 1138      | -7.64
+tailcall.cm   | 232053        | 160053    | -31.0
