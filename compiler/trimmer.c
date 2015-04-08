@@ -189,9 +189,7 @@ int _trimDetectSimpleInReturn(TreeNode* top) {
        top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1 != NULL && top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->kind == factorCall &&
        top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1 != NULL && top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->kind == call1 ) {
 
-    // XXX: re enable this line so we can do tail call optimization
-    // mark that it's a simple tail call so we can process it later
-    //top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->kind = callTail;
+    top->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->ptr1->kind = callTail;
     return 1;
   }
 
