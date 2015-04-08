@@ -1,0 +1,4 @@
+Profiling and optimization is automatically turned on when adding the "-t"
+flag.  If you don't specify this option, neither profiling nor optimization
+of tail calls will take place.  Results are attached in "results.txt"
+inside this folder.

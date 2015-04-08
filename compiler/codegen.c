@@ -1,4 +1,6 @@
 #include <stdio.h> // fprintf(), stderr
+#include <stdlib.h>
+#include <string.h>
 #include <glib.h>
 
 #include "types.h"
@@ -70,7 +72,8 @@ static void program(TreeNode* nodePtr) {
     emitRM(ST,ac0,0,ac0,"Clear dMem[0]");        // re-init dMem[0] = 0
     push(fp,"Save FP");                            // dMem[sp] = fp
     main1 = emitSkip(1);                           // Re-Init SP here later
-    emitRM(LDA,ac0,1,pc,"Get PC for Halt");      // ac0 has PC for HALT line
+    emitRM(LDA,ac0,2,pc,"Get PC for Halt");      // ac0 has PC for HALT line
+    emitRM(ST,ac0,-1,fp,"Function: store return address in dMem[FP-1]");
     main2 = emitSkip(1);                           // Init PC here
     emitRO(HALT,0,0,0,"Halt");                   // Stop.
 
@@ -155,8 +158,14 @@ static void funDeclaration(TreeNode* nodePtr) {
     semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
     semRecPtr->f.addr = emitSkip(0);           // Func code starts here
     currentScope = nodePtr->scope;                  // Get current symbol table
+
+    char* comment = calloc(500, sizeof(char));
+    sprintf(comment, "Start of function: %s", nodePtr->value.string);
+    emitRM(LDA, ac0, 0, ac0, comment);
+    free(comment);
+
     params(nodePtr->ptr2);                     // Output params code
-    emitRM(ST,ac0,-1,fp,"Function: store return address in dMem[FP-1]");
+    //emitRM(ST,ac0,-1,fp,"Function: store return address in dMem[FP-1]");
     functionStmt(nodePtr->ptr3);               // Output compStmt code
     emitRM(LD,pc,-1,fp,"End of function (set PC = return addr)");
     endScope();                                // Pop scope
@@ -685,47 +694,61 @@ static void factor(TreeNode* nodePtr) {
 }
 
 /* 28. call -> ID '(' args ')' */
-// TODO: fix call generation so that tail call optimization works
 static void call(TreeNode* nodePtr) {
     // get the semantic record
     SemRec* semRecPtr;
     semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
 
+    // print differences for debugging
+    fprintf(stderr, "semRecPtr num locals: %i\n", semRecPtr->f.localSpace);
+    fprintf(stderr, "nodePtr num locals: %i\n", nodePtr->locals_so_far);
+
+    // push the FP to the stack and save space for the return address
     if ( nodePtr->kind == call1 ) {
-      // push the FP to the stack and save space for the return address
       push(fp,              "Function call, save old FP");
       emitRM(LDA,sp,-1,sp,"     Save space for return addr");
-
-      // set the FP right above the two things we just stored
-      //emitRM(LDA, fp, 2, sp,"   Set the top of the stack frame");
-    } else {
-      // move the SP back right below the FP
-      emitRM(LDA, sp, -2, fp, "  Reset the SP to below the FP");
     }
 
     // output argument code
     args(nodePtr->ptr1);
 
-    // set the SP and FP to the proper values
-    // only set the FP if we are creating a new frame, otherwise use the current one
+    // set the FP if we are in a call,
+    // otherwise, copy new arguments into proper location and set SP right after them
     if ( nodePtr->kind == call1 ) {
       emitRM(LDA, fp, semRecPtr->f.numParams+2, sp,"   Set the top of the stack frame");
+
+      // set the SP below the local variables
+      emitRM(LDA,sp,-nodePtr->locals_so_far,sp, "     Set SP after locals");
     }
-    emitRM(LDA,sp,-nodePtr->locals_so_far,sp, "     Set SP after locals");
+    else {
+      for ( int n = 0; n < semRecPtr->f.numParams; n++ ) {
+        emitRM(LD, ac0, semRecPtr->f.numParams-n, sp, "");
+        emitRM(ST, ac0, -(n+2), fp, "");
+      }
+
+      // set the SP to right below the parameters and local varaibles
+      int offset = 2 + semRecPtr->f.numParams + nodePtr->locals_so_far;
+      emitRM(LDA, sp, -offset, fp,"    Set the SP after function parameters and locals");
+    }
 
     // get the return address
+    // if tail call, load from the FP
     if ( nodePtr->kind == call1 ) {
-      emitRM(LDA,ac0,1,pc,"     Get return addr");  // ac0 = return addr (pc+1)
-    } else {
-      emitRM(LD, ac0, -1, fp,"      Reuse the old RA when we return");
+      emitRM(LDA,ac0,2,pc,"     Get return addr");  // ac0 = return addr (pc+1)
+      emitRM(ST, ac0, -1, fp, "     Store the return address in position");
     }
 
     // jump to the function we wish to call
-    emitRMAbs(LDA,pc,semRecPtr->f.addr,"CALL:     Jump to function");
+    char* comment = calloc(500, sizeof(char));
+    sprintf(comment, "CALL %s:     Jump to function", nodePtr->value.string);
+    emitRMAbs(LDA,pc,semRecPtr->f.addr, comment);
+    free(comment);
 
     // restore the old SP and FP after calling
-    emitRM(LDA,sp,0,fp,                "     Restore old SP");
-    emitRM(LD,fp,0,fp,                 "     Restore old FP");
+    if ( nodePtr->kind == call1 ) {
+      emitRM(LDA,sp,0,fp,                "     Restore old SP");
+      emitRM(LD,fp,0,fp,                 "     Restore old FP");
+    }
 }
 
 /* 29. args -> argList | empty */
