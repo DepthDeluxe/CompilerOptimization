@@ -1,0 +1,11 @@
+Constant Folding Situations
+
+ConstantAdd: 3 + 4 -> 7
+AddZero: x + 0 -> x
+ConstantMul: 3 * 4 -> 12
+MulOne: x * 1 -> x
+MulZero: x * 0 -> 0
+ConstantSub: 3 - 4 -> -1
+SubZero: x - 0 -> x
+ConstantDiv: 3 / 4 -> 0
+DivOne: x / 1 -> x
