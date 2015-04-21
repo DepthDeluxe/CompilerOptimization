@@ -65,6 +65,7 @@ typedef union {
     int addr;            // Memory location where the code is stored
     int numParams;       // Number of parameters
     int localSpace;      // Space for local variables
+    int inlineable;      // holds whether or not variable can be inlined
   } f;
 } SemRec;
 

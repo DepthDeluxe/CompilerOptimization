@@ -41,6 +41,10 @@ int         locals = 0;      // Number of local variables in the current scope
 int         theNumParams;    // Number of params in the current function
 int         in_while = 0;
 
+int inlineable = 1;
+int scopeDepth = 0;
+int shouldInline = 1;
+
 /****************************************************************************/
 /*                                                                          */
 /* semantic checking routines                                                 */
@@ -67,6 +71,7 @@ static void program(TreeNode* nodePtr) {
     semRecPtr->f.kind = func;
     semRecPtr->f.numParams = 0;
     semRecPtr->f.localSpace = 0;
+    semRecPtr->f.inlineable = 1;      // input function is inlineable by default
     insert(nodePtr->line, currentScope,"input",semRecPtr);
 
     // Make a semantic rec for the inputf function
@@ -75,6 +80,7 @@ static void program(TreeNode* nodePtr) {
       semRecPtr->f.kind = func;
       semRecPtr->f.numParams = 0;
       semRecPtr->f.localSpace = 0;
+      semRecPtr->f.inlineable = 0;
       insert(nodePtr->line, currentScope,"inputf",semRecPtr);
     }
 
@@ -83,6 +89,7 @@ static void program(TreeNode* nodePtr) {
     semRecPtr->f.kind = func;
     semRecPtr->f.numParams = 1;
     semRecPtr->f.localSpace = 0;
+    semRecPtr->f.inlineable = 1;      // output function is inlineable by default
     insert(nodePtr->line, currentScope,"output",semRecPtr);
 
     // Make a semantic rec for the outputf function
@@ -91,6 +98,7 @@ static void program(TreeNode* nodePtr) {
       semRecPtr->f.kind = func;
       semRecPtr->f.numParams = 1;
       semRecPtr->f.localSpace = 0;
+      semRecPtr->f.inlineable = 0;
       insert(nodePtr->line, currentScope,"outputf",semRecPtr);
     }
 
@@ -197,6 +205,9 @@ static void varDeclaration(TreeNode* nodePtr) {
 
 /* 6. funDecl -> typeSpec ID '(' params ')' compStmt  */
 static void funDeclaration(TreeNode* nodePtr) {
+    // reset inlinable varaible and scope
+    inlineable = 1;
+
      SemRec* semRecPtr;
 
      semRecPtr = newSemRec();
@@ -220,6 +231,13 @@ static void funDeclaration(TreeNode* nodePtr) {
      semRecPtr->f.localSpace = locals;
      nodePtr->scope = currentScope;          // Save symbol table for later use
      currentScope = currentScope->prevScope; // Pop scope
+
+     // set inlinable, don't inline main
+     if ( strcmp(nodePtr->value.string, "main") == 0 ) {
+       semRecPtr->f.inlineable = 0;
+     } else {
+       semRecPtr->f.inlineable = inlineable;
+     }
 }
 
 /* 7. params -> paramList | VOID */
@@ -289,6 +307,8 @@ static void param(TreeNode* nodePtr) {
 
 /* 10. funcStmt -> '{' localDecl stmtList '}' */
 static void functionStmt(TreeNode* nodePtr) {
+    scopeDepth = 0;
+
     localDeclaration(nodePtr->ptr1);          // Check localDecl code
     statementList(nodePtr->ptr2);             // Check stmtList code
 }
@@ -296,16 +316,16 @@ static void functionStmt(TreeNode* nodePtr) {
 /* 11. localDecl -> varDecl localDecl | empty */
 static void localDeclaration(TreeNode* nodePtr) {
     if (nodePtr->kind == localDeclNormal) {
-    varDeclaration(nodePtr->ptr1);        // Check  varDecl code
-    localDeclaration(nodePtr->ptr2);      // Check localDecl code
+      varDeclaration(nodePtr->ptr1);        // Check  varDecl code
+      localDeclaration(nodePtr->ptr2);      // Check localDecl code
     } //else if (nodePtr->kind == localDeclVoid) // No checks needed.
 }
 
 /* 12. stmtList -> stmt stmtList | empty */
 static void statementList(TreeNode* nodePtr) {
     if (nodePtr->kind == stmtListNormal) {
-    statement(nodePtr->ptr1);             // Check stmt code
-    statementList(nodePtr->ptr2);         // Check stmtList code
+      statement(nodePtr->ptr1);             // Check stmt code
+      statementList(nodePtr->ptr2);         // Check stmtList code
     } //else if (nodePtr->kind == stmtListVoid)  // No checks needed.
 }
 
@@ -337,6 +357,7 @@ static void expressionStmt(TreeNode* nodePtr) {
 
 /* 15. compStmt -> '{' localDecl stmtList '}' */
 static void compoundStmt(TreeNode* nodePtr) {
+    scopeDepth++;
     beginScope();                        // Push scope onto sym tab
     currentScope->base = fp;                // Base = FP
     currentScope->used = currentScope->prevScope->used;
@@ -409,9 +430,15 @@ static void jumpStmt(TreeNode* nodePtr) {
 
 /* 18. retStmt -> return ';' | return exp ';' */
 static void returnStmt(TreeNode* nodePtr) {
+    // function is no longer inlineable if we are deeper than the top scope
+    if ( scopeDepth > 0 ) {
+      inlineable = 0;
+    }
+
     //if (nodePtr->kind == retStmtVoid)          // No checks needed.
-    if (nodePtr->kind == retStmtExp)
-    expression(nodePtr->ptr1);            // Check exp code
+    if (nodePtr->kind == retStmtExp) {
+      expression(nodePtr->ptr1);            // Check exp code
+    }
 }
 
 /* 19. exp -> var '=' exp | simpExp */
