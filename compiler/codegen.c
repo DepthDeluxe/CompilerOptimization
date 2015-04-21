@@ -46,9 +46,12 @@ static void args(TreeNode* nodePtr);
 static void argList(TreeNode* nodePtr);
 
 /* evil globals, really shouldn't be using theses but IDGAF */
-int whileConditionalLocation = -1;
-int whileJumpLocation = -1;
-nodekind_t whileConditionalType;
+static int whileConditionalLocation = -1;
+static int whileJumpLocation = -1;
+static nodekind_t whileConditionalType;
+
+char functionName[50];
+char variableName[50];
 
 /****************************************************************************/
 /*                                                                          */
@@ -154,6 +157,8 @@ static void varDeclaration(TreeNode* nodePtr) {
 /* 6. funDecl -> typeSpec ID '(' params ')' compStmt  */
 static void funDeclaration(TreeNode* nodePtr) {
     SemRec* semRecPtr;
+
+    strcpy(functionName, nodePtr->value.string);
 
     semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
     semRecPtr->f.addr = emitSkip(0);           // Func code starts here
@@ -493,9 +498,11 @@ static void expression(TreeNode* nodePtr, int noJump) {
 /* 20. var -> ID | ID '[' exp ']' */
 static void var(TreeNode* nodePtr, int rlval) {
   SemRec* semRecPtr;
+
   int loc, loc2;
   if (nodePtr->kind == varSingle) {
-    semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
+    sprintf(variableName, "%s_%s", functionName, nodePtr->value.string);
+    semRecPtr = lookup(nodePtr->line, currentScope, variableName);
 
     if (rlval == 0) { // we want the lvalue, ac1 = var addr
       emitRM(LDA,ac1,semRecPtr->v.offset,semRecPtr->v.base,
@@ -530,7 +537,8 @@ static void var(TreeNode* nodePtr, int rlval) {
     emitRMAbs(JGE,ac0,loc2,"  variable: Jump if subscript >= 0");       // Jump if subscript >= 0
     emitRestore();                      // Restore instr counter
 
-    semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
+    sprintf(variableName, "%s_%s", functionName, nodePtr->value.string);
+    semRecPtr = lookup(nodePtr->line, currentScope, variableName);
 
     if (rlval == 0) { // we want the lvalue, Get arr[exp] addr.
       if (semRecPtr->v.kind == intarr) {  // For intarr

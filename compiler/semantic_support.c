@@ -224,6 +224,15 @@ Scope* currentScope;
 SemRec* lookup(int line, Scope* scopePtr, char* theName) {
   SemRec* record;
 
+  // if we are all the way up, remove function prefix by moving char pointer up
+  if ( scopePtr->prevScope == NULL ) {
+    for ( int n = 0; theName[n] != 0; n++ ) {
+      if ( theName[n] == '_' ) {
+        theName = theName + n;
+      }
+    }
+  }
+
   // If the scope is NULL, the SemRec does not exist, error.
   if (scopePtr == NULL) {
     fprintf(stderr, "Variable/Function does not exist.\n");

@@ -41,9 +41,12 @@ int         locals = 0;      // Number of local variables in the current scope
 int         theNumParams;    // Number of params in the current function
 int         in_while = 0;
 
-int inlineable = 1;
-int scopeDepth = 0;
-int shouldInline = 1;
+static int inlineable = 1;
+static int scopeDepth = 0;
+static int shouldInline = 1;
+
+static char functionName[50] = {0};
+static char variableName[50] = {0};
 
 /****************************************************************************/
 /*                                                                          */
@@ -132,6 +135,8 @@ static void declaration(TreeNode* nodePtr) {
 static void varDeclaration(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
+    sprintf(variableName, "%s_%s", functionName, nodePtr->value.string);
+
     // First case handles variables and
     // second case handles arrays
     if (nodePtr->kind == varDeclSingle) {
@@ -160,7 +165,7 @@ static void varDeclaration(TreeNode* nodePtr) {
       semRecPtr->v.base = currentScope->base;
       semRecPtr->v.offset = -currentScope->used;
       currentScope->used++;  // 1 more space has been used
-      insert(nodePtr->line, currentScope, nodePtr->value.string, semRecPtr);
+      insert(nodePtr->line, currentScope, variableName, semRecPtr);
 
       // increment the locals counter
       locals++;
@@ -195,7 +200,7 @@ static void varDeclaration(TreeNode* nodePtr) {
       semRecPtr->v.base = currentScope->base;
       semRecPtr->v.offset = -currentScope->used;
       currentScope->used += nodePtr->array_len;
-      insert(nodePtr->line, currentScope, nodePtr->value.string,semRecPtr);
+      insert(nodePtr->line, currentScope, variableName,semRecPtr);
 
       // increment the local variable counter by the
       // number of items in the array
@@ -207,6 +212,7 @@ static void varDeclaration(TreeNode* nodePtr) {
 static void funDeclaration(TreeNode* nodePtr) {
     // reset inlinable varaible and scope
     inlineable = 1;
+    strcpy(functionName, nodePtr->value.string);
 
      SemRec* semRecPtr;
 
@@ -233,7 +239,7 @@ static void funDeclaration(TreeNode* nodePtr) {
      currentScope = currentScope->prevScope; // Pop scope
 
      // set inlinable, don't inline main
-     if ( strcmp(nodePtr->value.string, "main") == 0 ) {
+     if ( strcmp(functionName, "main") == 0 ) {
        semRecPtr->f.inlineable = 0;
      } else {
        semRecPtr->f.inlineable = inlineable;
@@ -260,48 +266,49 @@ static void paramList(TreeNode* nodePtr) {
 static void param(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
+    sprintf(variableName, "%s_%s", functionName, nodePtr->value.string);
+
     if (nodePtr->kind == paramSingle) {
 
-    // Make sure its not type void. 'void ID' is not legal.
-    if (nodePtr->ptr1->kind == typeSpecVoid) {
-        fprintf(stderr, "Static semantic error!  Line %d, ",
-            nodePtr->line);
-        fprintf(stderr, "variable parameter \"%s\" declared void.\n",
-            nodePtr->value.string);
-        exit(1);
-    }
+      // Make sure its not type void. 'void ID' is not legal.
+      if (nodePtr->ptr1->kind == typeSpecVoid) {
+          fprintf(stderr, "Static semantic error!  Line %d, ",
+              nodePtr->line);
+          fprintf(stderr, "variable parameter \"%s\" declared void.\n",
+              nodePtr->value.string);
+          exit(1);
+      }
 
-    // Make a semantic record for the parameter (local variable).
-    semRecPtr = newSemRec();
-    if ( nodePtr->ptr1->kind == typeSpecInt ) {
-      semRecPtr->v.kind = intvar;
-    } else if ( nodePtr->ptr1->kind == typeSpecFloat ) {
-      semRecPtr->v.kind = floatvar;
-    }
-    semRecPtr->v.base = currentScope->base;
-    semRecPtr->v.offset = -currentScope->used;
-    currentScope->used++;
-    insert(nodePtr->line, currentScope,nodePtr->value.string,semRecPtr);
-    theNumParams++;
+      // Make a semantic record for the parameter (local variable).
+      semRecPtr = newSemRec();
+      if ( nodePtr->ptr1->kind == typeSpecInt ) {
+        semRecPtr->v.kind = intvar;
+      } else if ( nodePtr->ptr1->kind == typeSpecFloat ) {
+        semRecPtr->v.kind = floatvar;
+      }
+      semRecPtr->v.base = currentScope->base;
+      semRecPtr->v.offset = -currentScope->used;
+      currentScope->used++;
+      insert(nodePtr->line, currentScope, variableName,semRecPtr);
+      theNumParams++;
     }
     else { //if (nodePtr->kind ==paramArray)
+      // Make sure its not type void. 'void ID []' is not legal.
+      if (nodePtr->ptr1->kind == typeSpecVoid) {
+          fprintf(stderr, "Semantic error!  Line %d, ", nodePtr->line);
+          fprintf(stderr, "variable parameter \"%s\" declared void.\n",
+              nodePtr->value.string);
+          exit(1);
+      }
 
-    // Make sure its not type void. 'void ID []' is not legal.
-    if (nodePtr->ptr1->kind == typeSpecVoid) {
-        fprintf(stderr, "Semantic error!  Line %d, ", nodePtr->line);
-        fprintf(stderr, "variable parameter \"%s\" declared void.\n",
-            nodePtr->value.string);
-        exit(1);
-    }
-
-    // Make a semantic record for the parameter (local array variable).
-    semRecPtr = newSemRec();           // new semantic record (var)
-    semRecPtr->v.kind = refarr;        // Kind = reference array
-    semRecPtr->v.base = currentScope->base;    // set base loc
-    semRecPtr->v.offset = -currentScope->used; // set offset loc
-    currentScope->used++;                      // update spc used
-    insert(nodePtr->line, currentScope, nodePtr->value.string,semRecPtr);
-    theNumParams++;                         // inc num of params
+      // Make a semantic record for the parameter (local array variable).
+      semRecPtr = newSemRec();           // new semantic record (var)
+      semRecPtr->v.kind = refarr;        // Kind = reference array
+      semRecPtr->v.base = currentScope->base;    // set base loc
+      semRecPtr->v.offset = -currentScope->used; // set offset loc
+      currentScope->used++;                      // update spc used
+      insert(nodePtr->line, currentScope, variableName,semRecPtr);
+      theNumParams++;                         // inc num of params
     }
 }
 
@@ -358,6 +365,7 @@ static void expressionStmt(TreeNode* nodePtr) {
 /* 15. compStmt -> '{' localDecl stmtList '}' */
 static void compoundStmt(TreeNode* nodePtr) {
     scopeDepth++;
+
     beginScope();                        // Push scope onto sym tab
     currentScope->base = fp;                // Base = FP
     currentScope->used = currentScope->prevScope->used;
@@ -366,6 +374,8 @@ static void compoundStmt(TreeNode* nodePtr) {
     statementList(nodePtr->ptr2);        // Check stmtList code
     nodePtr->scope = currentScope;      // Save symbol table for later use
     currentScope = currentScope->prevScope;    // Pop scope
+
+    scopeDepth--;
 }
 
 /* 16. selStmt -> if '(' exp ')' stmt | if '(' exp ')' stmt else stmt */
@@ -456,7 +466,8 @@ static void var(TreeNode* nodePtr, int rlval) {
 
     // For variables...
     if (nodePtr->kind == varSingle) {
-      semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
+      sprintf(variableName, "%s_%s", functionName, nodePtr->value.string);
+      semRecPtr = lookup(nodePtr->line, currentScope, variableName);
 
       // rlval == 0 checks the lvalue case
       // rlval == 1 checks the rvalue case
@@ -487,7 +498,8 @@ static void var(TreeNode* nodePtr, int rlval) {
     } else if (nodePtr->kind == varArray) {
       expression(nodePtr->ptr1);          // Check exp code
 
-      semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
+      sprintf(variableName, "%s_%s", functionName, nodePtr->value.string);
+      semRecPtr = lookup(nodePtr->line, currentScope, variableName);
 
       // rlval == 0 checks the lvalue case
       // rlval == 1 checks the rvalue case
