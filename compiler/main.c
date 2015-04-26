@@ -17,6 +17,7 @@ ParseTree     parseTreePtr;      // Pointer to the top of the parse tree
 // compiler options
 int with_float = 0;
 int with_tree_trimming = 0;
+int with_inlining = 0;
 
 /****************************************************************************/
 /*                                                                          */
@@ -37,6 +38,9 @@ int main(int argc, char** argv) {
     }
     if( strcmp(argv[n], "-t") == 0 ) {
       with_tree_trimming = 1;
+    }
+    if ( strcmp(argv[n], "-i") == 0 ) {
+      with_inlining = 1;
     }
   }
 

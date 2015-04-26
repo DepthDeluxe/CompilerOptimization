@@ -54,6 +54,7 @@ static char functionName[50];
 static char variableName[50];
 static int inNonInlineableExp = 0;
 static int insideInline = 0;
+extern int with_inlining;
 
 /****************************************************************************/
 /*                                                                          */
@@ -744,7 +745,8 @@ static void call(TreeNode* nodePtr) {
     // only inline if the function is inlineable and the function call
     // is in an inlinable location, including not being a tail call
     if ( nodePtr->kind == call1 && !inNonInlineableExp &&
-         semRecPtr->f.inlineable && strcmp(functionName, nodePtr->value.string) != 0 ) {
+         semRecPtr->f.inlineable && strcmp(functionName, nodePtr->value.string) != 0 &&
+         with_inlining) {
       if ( strcmp(nodePtr->value.string, "input") == 0 ) {
         emitRO(IN,ac0,0,0,  "     Get input");
       }
