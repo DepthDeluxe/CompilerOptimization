@@ -65,10 +65,11 @@ run_programs() {
     fi
     thisOutput=$($redirect ftm "./$file")
 
-    echo "$thisOutput" >>$debug
+    echo "$thisOutput" >> "$debug"
 
     # filter out needed information from the output
-    echo "$thisOutput" | grep "OUT instruction prints" >> "$OUTPUT"
+    echo "$file" >> "$OUTPUT"
+    echo "$thisOutput" | egrep "OUT instruction prints" >> "$OUTPUT"
     echo $thisOutput | egrep -o '[0-9]+ were NOPs --> [0-9]+' | sed -e 's/[^0-9 ]//g' -e 's/    /;/g' -e "s/^/$name;/" >> "$PROFILE"
   done
 
