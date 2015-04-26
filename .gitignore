@@ -8,5 +8,9 @@ y.tab.c
 tags
 
 build/
+test.cm
+test.tm
 
 lex-rules.txt
+
+lecture-notes.pdf
