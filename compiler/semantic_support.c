@@ -291,9 +291,12 @@ void endScope() {
   Scope* oldScope = currentScope;
   currentScope = currentScope->prevScope;
 
+  // TODO: memory management when done with program, needs to still
+  //       exist for other usage
+
   // free up memory used in the hash table
-  g_hash_table_destroy(oldScope->theTable);
+  //g_hash_table_destroy(oldScope->theTable);
 
   // free up the malloced scope
-  free(oldScope);
+  //free(oldScope);
 }

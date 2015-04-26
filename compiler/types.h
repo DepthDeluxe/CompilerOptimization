@@ -66,6 +66,8 @@ typedef union {
     int numParams;       // Number of parameters
     int localSpace;      // Space for local variables
     int inlineable;      // holds whether or not variable can be inlined
+    void* statements;    // holds the pointer to the start of the statements
+    void* scope;         // scope for this function
   } f;
 } SemRec;
 

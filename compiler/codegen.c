@@ -50,8 +50,9 @@ static int whileConditionalLocation = -1;
 static int whileJumpLocation = -1;
 static nodekind_t whileConditionalType;
 
-char functionName[50];
-char variableName[50];
+static char functionName[50];
+static char variableName[50];
+static int inNonInlineableExp = 0;
 
 /****************************************************************************/
 /*                                                                          */
@@ -162,6 +163,8 @@ static void funDeclaration(TreeNode* nodePtr) {
 
     semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
     semRecPtr->f.addr = emitSkip(0);           // Func code starts here
+    semRecPtr->f.statements = nodePtr->ptr3;  // emit the statments
+    semRecPtr->f.scope = nodePtr->scope;      // save the scope for later (like everything else)
     currentScope = nodePtr->scope;                  // Get current symbol table
 
     char* comment = calloc(500, sizeof(char));
@@ -199,6 +202,7 @@ static void param(TreeNode* nodePtr) {
 
 /* 10. funcStmt -> '{' localDecl stmtList '}' */
 static void functionStmt(TreeNode* nodePtr) {
+
     localDeclaration(nodePtr->ptr1);          // Output code for localDecl
     statementList(nodePtr->ptr2);             // Output code for stmtList
 }
@@ -258,7 +262,10 @@ static void compoundStmt(TreeNode* nodePtr) {
 static void selectionStmt(TreeNode* nodePtr) {
     int startLoc, elseLoc, endIfLoc, endLoc;
     if (nodePtr->kind == selStmtIf) {
+      inNonInlineableExp = 1;
       expression(nodePtr->ptr1, 1);     // Output exp code
+      inNonInlineableExp = 0;
+
       startLoc = emitSkip(1);             // Save space for "if" test
       statement(nodePtr->ptr2);      // Output stmt code
 
@@ -274,7 +281,10 @@ static void selectionStmt(TreeNode* nodePtr) {
       emitRestore();                 // Restore numbering
     } else { //if (nodePtr->kind == selStmtIfElse)
 
+      inNonInlineableExp = 1;
       expression(nodePtr->ptr1, 1);        // Output exp code
+      inNonInlineableExp = 0;
+
       startLoc = emitSkip(1);                // Skip jump1 loc
       statement(nodePtr->ptr2);         // Output stmtExp code
 
@@ -313,7 +323,9 @@ static void whileStmt( TreeNode* nodePtr ) {
   whileConditionalLocation = startLoc;
 
   // emit the expression
+  inNonInlineableExp = 1;
   expression( nodePtr->ptr1, 1 );
+  inNonInlineableExp = 0;
 
   // store away the type of conditional
   if ( nodePtr->ptr1->kind == expSimple &&
@@ -594,6 +606,8 @@ static void simpleExp(TreeNode* nodePtr, int noJump) {
            relop_kind == relopEQ ||
            relop_kind == relopNE ) {
 
+        inNonInlineableExp = 1;
+
         // conditional jump that depends on the SUB of ac0 and ac1
         cndJumpLoc = emitSkip(1);     // Relop: jump to F or continue to T
 
@@ -608,6 +622,8 @@ static void simpleExp(TreeNode* nodePtr, int noJump) {
         emitRM(LDC,ac0,0,0,"");     // ac0 = FALSE
 
         endLoc = emitSkip(0);         // End location
+
+        inNonInlineableExp = 0;
       } else {
         // conditional jump that depends on the SUB of ac0 and ac1
         cndJumpLoc = emitSkip(1);     // Relop: jump to T or continue to F
@@ -653,6 +669,8 @@ static void simpleExp(TreeNode* nodePtr, int noJump) {
 /* 24. addop -> '+' | '-' */
 static void additiveExp(TreeNode* nodePtr) {
     if (nodePtr->kind == addExpNormal) {
+      inNonInlineableExp = 1;
+
       additiveExp(nodePtr->ptr1);        // Output addExp code (ans in ac0)
       push(ac0,"");                      // Save answer
       term(nodePtr->ptr3);               // Output term code (ans in ac0)
@@ -666,6 +684,8 @@ static void additiveExp(TreeNode* nodePtr) {
       else
         emitRO(SUB,ac0,ac1,ac0,""); // ac0 = addExp - term
 
+      inNonInlineableExp = 0;
+
     } else //if (nodePtr->kind == addExpTerm)
       term(nodePtr->ptr1);               // Output code for term
 }
@@ -674,6 +694,8 @@ static void additiveExp(TreeNode* nodePtr) {
 /* 26. mulop -> '*' | '/' */
 static void term(TreeNode* nodePtr) {
     if (nodePtr->kind == termNormal) {
+      inNonInlineableExp = 1;
+
       term(nodePtr->ptr1);                 // Output term code (ans in ac0)
       push(ac0,"");                        // Save 1st operand
       factor(nodePtr->ptr3);               // Output factor code (ans in ac0)
@@ -683,6 +705,8 @@ static void term(TreeNode* nodePtr) {
         emitRO(MUL,ac0,ac1,ac0,"");    // ac0 = term * factor
       else
         emitRO(DIV,ac0,ac1,ac0,"");    // ac0 = term / factor
+
+      inNonInlineableExp = 0;
     } else //if (nodePtr->kind == termFactor)
       factor(nodePtr->ptr1);               // Output code for factor
 }
@@ -710,60 +734,111 @@ static void call(TreeNode* nodePtr) {
     // print differences for debugging
     fprintf(stderr, "semRecPtr num locals: %i\n", semRecPtr->f.localSpace);
     fprintf(stderr, "nodePtr num locals: %i\n", nodePtr->locals_so_far);
+    fprintf(stderr, "Inlineable: %i\n", semRecPtr->f.inlineable);
 
-    // push the FP to the stack and save space for the return address
-    if ( nodePtr->kind == call1 ) {
-      push(fp,              "Function call, save old FP");
-      emitRM(LDA,sp,-1,sp,"     Save space for return addr");
-    }
+    // only inline if the function is inlineable and the function call
+    // is in an inlinable location, including not being a tail call
+    if ( nodePtr->kind == call1 && !inNonInlineableExp &&
+         semRecPtr->f.inlineable && strcmp(functionName, nodePtr->value.string) != 0 ) {
+      if ( strcmp(nodePtr->value.string, "input") == 0 ) {
+        emitRO(IN,ac0,0,0,  "     Get input");
+      }
+      else if ( strcmp(nodePtr->value.string, "output") == 0 ) {
+        args(nodePtr->ptr1);
+        emitRM(LD,ac0,1,sp,"     Get output");
+        emitRO(OUT,ac0,0,0, "     Give output");
+        emitRM(LDA, sp, 1, sp, "");
+      }
+      else {
 
-    // output argument code
-    args(nodePtr->ptr1);
+        // move the frame pointer down and the stack poitner down
+        emitRM(LDA, sp, -2, sp, "");
 
-    // set the FP if we are in a call,
-    // otherwise, copy new arguments into proper location and set SP right after them
-    if ( nodePtr->kind == call1 ) {
-      emitRM(LDA, fp, semRecPtr->f.numParams+2, sp,"   Set the top of the stack frame");
+        // emit the arguments and push the stack space down to give room for vars
+        args(nodePtr->ptr1);
 
-      // set the SP below the local variables
-      emitRM(LDA,sp,-nodePtr->locals_so_far,sp, "     Set SP after locals");
-    }
-    else {
-      for ( int n = 0; n < semRecPtr->f.numParams; n++ ) {
-        emitRM(LD, ac0, semRecPtr->f.numParams-n, sp, "");
-        emitRM(ST, ac0, -(n+2), fp, "");
+        // move into a new scope, change the function name
+        Scope* oldScope = currentScope;
+        currentScope = semRecPtr->f.scope;
+        char oldFunctionName[50];
+        strcpy(oldFunctionName, functionName);
+        strcpy(functionName, nodePtr->value.string);
+
+        emitRM(ST, fp, semRecPtr->f.numParams + 2, sp, "");
+        emitRM(LDA, fp, semRecPtr->f.numParams + 2, sp, " move FP up to be able to reuse fn code");
+        emitRM(LDA, sp, -semRecPtr->f.localSpace, sp, "");
+
+        // emit the function code and function name
+        functionStmt(semRecPtr->f.statements);
+        strcpy(functionName, oldFunctionName);
+
+        // go back to the old scope
+        currentScope = oldScope;
+
+        // move the SP back
+        emitRM(LDA, sp, semRecPtr->f.localSpace + semRecPtr->f.numParams + 2, sp, "");
+        emitRM(LD, fp, 0, fp, "");
+      }
+    } else {
+
+      // push the FP to the stack and save space for the return address
+      if ( nodePtr->kind == call1 ) {
+        push(fp,              "Function call, save old FP");
+        emitRM(LDA,sp,-1,sp,"     Save space for return addr");
       }
 
-      // set the SP to right below the parameters and local varaibles
-      int offset = 2 + semRecPtr->f.numParams + nodePtr->locals_so_far;
-      emitRM(LDA, sp, -offset, fp,"    Set the SP after function parameters and locals");
-    }
+      // output argument code
+      args(nodePtr->ptr1);
 
-    // get the return address
-    // if tail call, load from the FP
-    if ( nodePtr->kind == call1 ) {
-      emitRM(LDA,ac0,2,pc,"     Get return addr");  // ac0 = return addr (pc+1)
-      emitRM(ST, ac0, -1, fp, "     Store the return address in position");
-    }
+      // set the FP if we are in a call,
+      // otherwise, copy new arguments into proper location and set SP right after them
+      if ( nodePtr->kind == call1 ) {
+        emitRM(LDA, fp, semRecPtr->f.numParams+2, sp,"   Set the top of the stack frame");
 
-    // jump to the function we wish to call
-    char* comment = calloc(500, sizeof(char));
-    sprintf(comment, "CALL %s:     Jump to function", nodePtr->value.string);
-    emitRMAbs(LDA,pc,semRecPtr->f.addr, comment);
-    free(comment);
+        // set the SP below the local variables
+        emitRM(LDA,sp,-nodePtr->locals_so_far,sp, "     Set SP after locals");
+      }
+      else {
+        for ( int n = 0; n < semRecPtr->f.numParams; n++ ) {
+          emitRM(LD, ac0, semRecPtr->f.numParams-n, sp, "");
+          emitRM(ST, ac0, -(n+2), fp, "");
+        }
 
-    // restore the old SP and FP after calling
-    if ( nodePtr->kind == call1 ) {
-      emitRM(LDA,sp,0,fp,                "     Restore old SP");
-      emitRM(LD,fp,0,fp,                 "     Restore old FP");
+        // set the SP to right below the parameters and local varaibles
+        int offset = 2 + semRecPtr->f.numParams + nodePtr->locals_so_far;
+        emitRM(LDA, sp, -offset, fp,"    Set the SP after function parameters and locals");
+      }
+
+      // get the return address
+      // if tail call, load from the FP
+      if ( nodePtr->kind == call1 ) {
+        emitRM(LDA,ac0,2,pc,"     Get return addr");  // ac0 = return addr (pc+1)
+        emitRM(ST, ac0, -1, fp, "     Store the return address in position");
+      }
+
+      // jump to the function we wish to call
+      char* comment = calloc(500, sizeof(char));
+      sprintf(comment, "CALL %s:     Jump to function", nodePtr->value.string);
+      emitRMAbs(LDA,pc,semRecPtr->f.addr, comment);
+      free(comment);
+
+      // restore the old SP and FP after calling
+      if ( nodePtr->kind == call1 ) {
+        emitRM(LDA,sp,0,fp,                "     Restore old SP");
+        emitRM(LD,fp,0,fp,                 "     Restore old FP");
+      }
     }
 }
 
 /* 29. args -> argList | empty */
 static void args(TreeNode* nodePtr) {
+  inNonInlineableExp = 1;
+
     if (nodePtr->kind == argsNormal)
       argList(nodePtr->ptr1);              // Output argList code
     //else if (nodePtr->kind == argsVoid)       // No code to generate
+
+  inNonInlineableExp = 0;
 }
 
 /* 30. argList -> exp ',' argList | exp */
