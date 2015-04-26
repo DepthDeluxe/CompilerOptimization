@@ -53,6 +53,7 @@ static nodekind_t whileConditionalType;
 static char functionName[50];
 static char variableName[50];
 static int inNonInlineableExp = 0;
+static int insideInline = 0;
 
 /****************************************************************************/
 /*                                                                          */
@@ -480,10 +481,14 @@ static void jumpStmt(TreeNode* nodePtr) {
 /* 18. retStmt -> return ';' | return exp ';' */
 static void returnStmt(TreeNode* nodePtr) {
     if (nodePtr->kind == retStmtVoid) {
-      emitRM(LD,pc,-1,fp,"Returning (end of function)");   // return. set PC
+      if ( !insideInline ) {
+        emitRM(LD,pc,-1,fp,"Returning (end of function)");   // return. set PC
+      }
     } else { //if (nodePtr->kind == retStmtExp)
       expression(nodePtr->ptr1, 0);       // Output exp code (ans in ac0)
-      emitRM(LD,pc,-1,fp,"Returning (end of function)");  // return. set PC
+      if ( !insideInline ) {
+        emitRM(LD,pc,-1,fp,"Returning (end of function)");  // return. set PC
+      }
     }
 }
 
@@ -769,7 +774,10 @@ static void call(TreeNode* nodePtr) {
         emitRM(LDA, sp, -semRecPtr->f.localSpace, sp, "");
 
         // emit the function code and function name
+        insideInline = 1;
         functionStmt(semRecPtr->f.statements);
+        insideInline = 0;
+
         strcpy(functionName, oldFunctionName);
 
         // go back to the old scope
