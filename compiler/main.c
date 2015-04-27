@@ -10,11 +10,12 @@
 #include "trimmer.h"
 #include "codegen.h"
 #include "codegen_support.h"
-#include "profiler.h"
+#include "peephole.h"
 
 ParseTree     parseTreePtr;      // Pointer to the top of the parse tree
 
 // compiler options
+int with_peephole = 0;
 int with_float = 0;
 int with_tree_trimming = 0;
 int with_inlining = 0;
@@ -34,7 +35,7 @@ int main(int argc, char** argv) {
       with_float = 1;
     }
     if ( strcmp(argv[n], "-p") == 0 ) {
-      with_profile = 1;
+      with_peephole = 1;
     }
     if( strcmp(argv[n], "-t") == 0 ) {
       with_tree_trimming = 1;
@@ -60,9 +61,9 @@ int main(int argc, char** argv) {
   generateCode(parseTreePtr);
 
   // profile if enabled
-  if ( with_profile ) {
-    fprintf(stderr, "Profiling...\n");
-    profile();
+  if ( with_peephole ) {
+    fprintf(stderr, "Peepholing...\n");
+    peephole();
   }
 
   fprintf(stderr, "Writing code to stdout...\n");

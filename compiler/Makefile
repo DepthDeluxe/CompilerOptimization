@@ -10,7 +10,7 @@ endif
 CFLAGS = -std=c99 -Wall `pkg-config --cflags glib-2.0`
 LFLAGS = $(CFLAGS) `pkg-config --libs glib-2.0`
 
-SOURCES := y.tab.c main.c semantic.c semantic_support.c codegen.o codegen_support.c support.c profiler.c trimmer.c
+SOURCES := y.tab.c main.c semantic.c semantic_support.c codegen.o codegen_support.c support.c peephole.c trimmer.c
 
 # main build command
 all: ctags cm

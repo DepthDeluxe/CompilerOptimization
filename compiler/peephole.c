@@ -4,7 +4,7 @@
 #include "types.h"
 #include "compiler.h"
 
-#include "profiler.h"
+#include "peephole.h"
 #include "codegen.h"
 
 /*
@@ -460,8 +460,8 @@ void profilePUSHTOCOPY() {
   fprintf(stderr, "PUSHTOCOPY: %i\n", numIdentified);
 }
 
-void profile() {
-  fprintf(stderr, "Profile Results ======\n");
+void peephole() {
+  fprintf(stderr, "Peephole Results ======\n");
 
   profileLDST();
   profileSTLD();

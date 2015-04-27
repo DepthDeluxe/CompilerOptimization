@@ -13,7 +13,7 @@ void profileLDNULL();
 void profileDUP();
 void profilePUSHPOP();
 
-void profile();
+void peephole();
 
 #endif
 
