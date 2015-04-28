@@ -1,0 +1,32 @@
+To enable inlining, add a "-i" flag to the compiler flags (i.e. ./cm -i <file.cm >file.tm)
+
+Inlinable functions:
+1) NOT main
+2) Requires return statements to be only at end
+3) CAN have variables
+4) output() and input()
+5) Everything else
+
+Results (compared to stock compiler):
+
+program         before     after      nops after real after pct gone
+-----------------------------------------------------------------------------
+blank           65         40         0          40         38.46
+block           65         40         0          40         38.46
+call            83         60         0          60         27.71
+fact_rec        12320      10510      0          10510      14.69
+fact_tr         13535      11419      0          11419      15.63
+fib_rec         59906869   53250541   0          53250541   11.11
+fib_tr          1455       1214       0          1214       16.56
+for_test        1023       949        0          949        7.23
+hello           36         22         0          22         38.89
+hi              28         19         0          19         32.14
+inline          -1         664        0          664        -----
+rec             208        139        0          139        33.17
+RegisterSetup   77         51         0          51         33.77
+ret             39         31         0          31         20.51
+sample          73         43         0          43         41.10
+selsort         4734       2697       0          2697       43.03
+tailcall        304057     232042     0          232042     23.68
+while_in_while  -1         2249       0          2249       -----
+while           -1         329        0          329        -----
