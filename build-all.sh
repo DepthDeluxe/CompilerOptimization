@@ -30,7 +30,7 @@ build_programs() {
     echo "Building: $file"
 
     name=$(echo "$file" | cut -d'.' -f 1)
-    $CC -i $CFLAGS < "$file" > "build/${name}.tm"
+    $CC $CFLAGS < "$file" > "build/${name}.tm"
 
     if [ $? -ne 0 ]; then
       echo "Error: failed to build $file!"
