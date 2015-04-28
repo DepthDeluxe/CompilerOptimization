@@ -30,7 +30,7 @@ build_programs() {
     echo "Building: $file"
 
     name=$(echo "$file" | cut -d'.' -f 1)
-    $CC $CFLAGS < "$file" > "build/${name}.tm"
+    $CC -i $CFLAGS < "$file" > "build/${name}.tm"
 
     if [ $? -ne 0 ]; then
       echo "Error: failed to build $file!"
@@ -119,7 +119,7 @@ find_orig_count() {
 }
 
 run_profile() {
-  CFLAGS="-p"
+  CFLAGS="$optionFlag"
   run_tests
 
   local oldIFS="$IFS"
@@ -170,6 +170,8 @@ else
   command="$1"
 fi
 
+optionFlag="$2"
+
 # system constants
 EXPECTED_OUTPUT='handoutPrograms/expected-output.txt'
 OUTPUT='/tmp/output.txt'
@@ -185,6 +187,9 @@ rebuild)
   ;;
 profile)
   run_profile
+  ;;
+option)
+  run_option_profile
   ;;
 esac
 
