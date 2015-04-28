@@ -95,7 +95,7 @@ void runCheater(TreeNode* mainNode) {
     GList* iter = vals;
     int instCount = 0;
     while ( iter != NULL && iter->next != NULL ) {
-      printf("%i: LDC 0,%li(0)\n", instCount++, (uint64_t)vals->data);
+      printf("%i: LDC 0,%li(0)\n", instCount++, (uint64_t)iter->data);
       printf("%i: OUT 0,0,0\n", instCount++);
       iter = iter->next;
     }
