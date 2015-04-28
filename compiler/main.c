@@ -11,6 +11,7 @@
 #include "codegen.h"
 #include "codegen_support.h"
 #include "peephole.h"
+#include "cheater.h"
 
 ParseTree     parseTreePtr;      // Pointer to the top of the parse tree
 
@@ -19,6 +20,7 @@ int with_peephole = 0;
 int with_float = 0;
 int with_tree_trimming = 0;
 int with_inlining = 0;
+int with_cheating = 0;
 
 /****************************************************************************/
 /*                                                                          */
@@ -43,6 +45,9 @@ int main(int argc, char** argv) {
     if ( strcmp(argv[n], "-i") == 0 ) {
       with_inlining = 1;
     }
+    if ( strcmp(argv[n], "-c") == 0 ) {
+      with_cheating = 1;
+    }
   }
 
   fprintf(stderr, "Creating parse tree...\n");
@@ -54,6 +59,11 @@ int main(int argc, char** argv) {
   if ( with_tree_trimming ) {
     fprintf(stderr, "Performing tree trimming optimizations...\n");
     trimAll(parseTreePtr);
+  }
+
+  if ( with_cheating ) {
+    fprintf(stderr, "Cheating prep...\n");
+    cheaterInit();
   }
 
   fprintf(stderr,"Generating code...\n");
@@ -68,6 +78,11 @@ int main(int argc, char** argv) {
 
   fprintf(stderr, "Writing code to stdout...\n");
   printInstructionTable();
+
+  if ( with_cheating ) {
+    fprintf(stderr, "Running cheater...\n");
+    runCheater();
+  }
 
   fprintf(stderr,"Done!\n");
 
