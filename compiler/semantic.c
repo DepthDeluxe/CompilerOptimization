@@ -41,7 +41,8 @@ int         locals = 0;      // Number of local variables in the current scope
 int         theNumParams;    // Number of params in the current function
 int         in_while = 0;
 
-static int numInlinedFunctions = 0;
+static int numInlinedFunctions = 2;
+static int numInlinedCalled = 0;
 static int inlineable = 1;
 static int scopeDepth = 0;
 static int shouldInline = 1;

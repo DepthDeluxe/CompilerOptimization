@@ -54,7 +54,10 @@ static char functionName[50];
 static char variableName[50];
 static int inNonInlineableExp = 0;
 static int insideInline = 0;
+static int numInlineCalls = 0;
+
 extern int with_inlining;
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -63,6 +66,10 @@ extern int with_inlining;
 /****************************************************************************/
 void generateCode(TreeNode* nodePtr) {
   program(nodePtr);
+
+  if ( with_inlining ) {
+    fprintf(stderr, "Number inline calls: %i\n", numInlineCalls);
+  }
 }
 
 /* 1. prog -> declList */
@@ -737,11 +744,6 @@ static void call(TreeNode* nodePtr) {
     SemRec* semRecPtr;
     semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
 
-    // print differences for debugging
-    fprintf(stderr, "semRecPtr num locals: %i\n", semRecPtr->f.localSpace);
-    fprintf(stderr, "nodePtr num locals: %i\n", nodePtr->locals_so_far);
-    fprintf(stderr, "Inlineable: %i\n", semRecPtr->f.inlineable);
-
     // only inline if the function is inlineable and the function call
     // is in an inlinable location, including not being a tail call
     if ( nodePtr->kind == call1 && !inNonInlineableExp &&
@@ -749,17 +751,22 @@ static void call(TreeNode* nodePtr) {
          with_inlining) {
       if ( strcmp(nodePtr->value.string, "input") == 0 ) {
         emitRO(IN,ac0,0,0,  "     Get input");
+        numInlineCalls++;
       }
       else if ( strcmp(nodePtr->value.string, "output") == 0 ) {
         args(nodePtr->ptr1);
         emitRM(LD,ac0,1,sp,"     Get output");
         emitRO(OUT,ac0,0,0, "     Give output");
         emitRM(LDA, sp, 1, sp, "");
+        numInlineCalls++;
       }
       else {
 
         // move the frame pointer down and the stack poitner down
-        emitRM(LDA, sp, -2, sp, "");
+        int totalSubVars = semRecPtr->f.numParams + semRecPtr->f.localSpace;
+        if ( totalSubVars > 0) {
+          emitRM(LDA, sp, -2, sp, "");
+        }
 
         // emit the arguments and push the stack space down to give room for vars
         args(nodePtr->ptr1);
@@ -771,9 +778,11 @@ static void call(TreeNode* nodePtr) {
         strcpy(oldFunctionName, functionName);
         strcpy(functionName, nodePtr->value.string);
 
-        emitRM(ST, fp, semRecPtr->f.numParams + 2, sp, "");
-        emitRM(LDA, fp, semRecPtr->f.numParams + 2, sp, " move FP up to be able to reuse fn code");
-        emitRM(LDA, sp, -semRecPtr->f.localSpace, sp, "");
+        if ( totalSubVars > 0 ) {
+          emitRM(ST, fp, semRecPtr->f.numParams + 2, sp, "");
+          emitRM(LDA, fp, semRecPtr->f.numParams + 2, sp, " move FP up to be able to reuse fn code");
+          emitRM(LDA, sp, -semRecPtr->f.localSpace, sp, "");
+        }
 
         // emit the function code and function name
         insideInline = 1;
@@ -786,8 +795,12 @@ static void call(TreeNode* nodePtr) {
         currentScope = oldScope;
 
         // move the SP back
-        emitRM(LDA, sp, semRecPtr->f.localSpace + semRecPtr->f.numParams + 2, sp, "");
-        emitRM(LD, fp, 0, fp, "");
+        if ( totalSubVars > 0 ) {
+          emitRM(LDA, sp, semRecPtr->f.localSpace + semRecPtr->f.numParams + 2, sp, "");
+          emitRM(LD, fp, 0, fp, "");
+        }
+
+        numInlineCalls++;
       }
     } else {
 
