@@ -41,12 +41,15 @@ int         locals = 0;      // Number of local variables in the current scope
 int         theNumParams;    // Number of params in the current function
 int         in_while = 0;
 
+static int numInlinedFunctions = 0;
 static int inlineable = 1;
 static int scopeDepth = 0;
 static int shouldInline = 1;
 
 static char functionName[50] = {0};
 static char variableName[50] = {0};
+
+extern int with_inlining;
 
 /****************************************************************************/
 /*                                                                          */
@@ -58,6 +61,10 @@ void semanticCheck(TreeNode* nodePtr) {
     printNode(nodePtr, NULL);
 
     program(nodePtr);
+
+    if ( with_inlining ) {
+      fprintf(stderr, "Num inlined functions: %i\n", numInlinedFunctions);
+    }
 }
 
 /* 1. prog -> declList */
@@ -243,6 +250,7 @@ static void funDeclaration(TreeNode* nodePtr) {
        semRecPtr->f.inlineable = 0;
      } else {
        semRecPtr->f.inlineable = inlineable;
+       numInlinedFunctions += inlineable;
      }
 }
 
