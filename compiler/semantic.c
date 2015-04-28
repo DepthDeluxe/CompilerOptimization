@@ -603,10 +603,15 @@ static void factor(TreeNode* nodePtr) {
 }
 
 /* 28. call -> ID '(' args ')' */
+extern int with_cheating;
 static void call(TreeNode* nodePtr) {
     SemRec* semRecPtr;
 
     semRecPtr = lookup(nodePtr->line, currentScope, nodePtr->value.string);
+
+    if ( strcmp(nodePtr->value.string, "input") == 0 ) {
+      with_cheating = 0;
+    }
 
     args(nodePtr->ptr1);                      // Check args code
 
