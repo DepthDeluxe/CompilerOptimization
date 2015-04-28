@@ -1,0 +1,69 @@
+/* function to inline */
+int answer;
+void foo(void) {
+    int x;
+    int y;
+    x=3;
+    y=4;
+    answer = answer + x + y;
+}
+void foop(int z) {
+    int x;
+    int y;
+    x=3;
+    y=4;
+    answer = answer + x + y + z;
+}
+int foopy(int z) {
+    int x;
+    int y;
+    x=3;
+    y=4;
+    return x + y + z;
+}
+int foopys(void) {
+    int x;
+    int y;
+    x=3;
+    y=4;
+    return x + y;
+}
+void splat(void) {
+    int z;
+    int x;
+    int q;
+    z = 5;
+    x = 2;
+    q = 9;
+    foo();
+    foop(3);
+    foop(z);
+    foop(q);
+    answer = answer + foopy(3);
+    answer = answer + foopy(z);
+    answer = answer + foopy(q);
+    answer = answer + foopys();
+    answer = answer + z;
+}
+
+void main(void) {
+    int x;
+    int q;
+
+    output(203);
+    x = 8;
+    q = 7;
+    answer = 1;
+    foo();
+    foop(3);
+    foop(x);
+    foop(q);
+    answer = answer + foopy(3);
+    answer = answer + foopy(x);
+    answer = answer + foopy(q);
+    answer = answer + foopys();
+    answer = answer + x;
+    answer = answer + q;
+    splat();
+    output(answer);
+}

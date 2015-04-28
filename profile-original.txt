@@ -9,6 +9,7 @@ fib_tr;1455
 heapsort;8355
 hello;36
 hi;28
+inline;1023
 quicksort;4754
 rec;208
 RegisterSetup;77
