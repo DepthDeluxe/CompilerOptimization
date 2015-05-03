@@ -1,0 +1,31 @@
+This is the cheating optimization.  The compiler runs the program during compilation
+and only spits out the equivalent print instructions.  To run, use the -c flag with
+compilation and make sure the script "cheater-process.sh" is in the working
+directory of the compiler.
+
+Cheatable functions
+1) NOT functions that call input()
+2) Everything else
+
+Results (compared to stock compiler):
+program         before     after      nops after real after pct gone
+-----------------------------------------------------------------------------
+blank           65         3          0          3          95.38
+block           65         3          0          3          95.38
+call            83         3          0          3          96.39
+fact_rec        12320      3          0          3          99.98
+fact_tr         13535      3          0          3          99.98
+fib_rec         59906869   3          0          3          100.00
+fib_tr          1455       3          0          3          99.79
+for_test        -1         51         0          51         -----
+hello           36         3          0          3          91.67
+hi              28         3          0          3          89.29
+inline          1023       5          0          5          99.51
+rec             208        9          0          9          95.67
+RegisterSetup   77         3          0          3          96.10
+ret             39         3          0          3          92.31
+sample          73         3          0          3          95.89
+selsort         4734       5          0          5          99.89
+tailcall        304057     3          0          3          100.00
+while_in_while  -1         29         0          29         -----
+while           -1         15         0          15         -----
