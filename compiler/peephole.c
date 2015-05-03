@@ -11,7 +11,12 @@
  * Code Profiler
  */
 void _nopifyInstruction(int loc) {
+  // get the instruction, don't do anything if it is NULL
   TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &loc);
+  if ( inst == NULL ) {
+    return;
+  }
+
   inst->opCode = NOP;
   inst->a = 0;
   inst->b = 0;
