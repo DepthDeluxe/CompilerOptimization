@@ -364,8 +364,8 @@ int _pushpopMatch(int start, int X) {
 void profilePUSHPOP() {
   int numIdentified = 0;
 
-  // run this part from the beginning
-  for ( int n = 0; n < g_hash_table_size(instructionTable); n++ ) {
+  // run this part from just after the setup code
+  for ( int n = 10; n < g_hash_table_size(instructionTable); n++ ) {
     // get the next instruction
     TMInstruction* inst = (TMInstruction*)g_hash_table_lookup(instructionTable, &n);
 

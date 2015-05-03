@@ -390,6 +390,9 @@ static void forStmt(TreeNode* nodePtr) {
   int prevWhileJL           = whileJumpLocation;
   nodekind_t prevWhileType  = whileConditionalType;
 
+  // nothing inside the forloop can be inlinable...
+  inNonInlineableExp = 1;
+
   // emit the initial assignment
   expression( initAssign, 0 );
 
@@ -412,10 +415,13 @@ static void forStmt(TreeNode* nodePtr) {
   int cndJmpLoc = emitSkip(1);
   whileJumpLocation = cndJmpLoc;
 
+  // the body statments can be inlined
+  inNonInlineableExp = 1;
+
   // output the body statements
   statement( statements );
 
-  // emit the modifier below the statement body
+  // emit the modifier below the statement body - should be able to be inlined
   expression( modifier, 0 );
 
   // put an unconditional jump back to the top
@@ -875,6 +881,3 @@ static void argList(TreeNode* nodePtr) {
       push(ac0,"");
     }
 }
-
-
-
