@@ -416,7 +416,7 @@ static void forStmt(TreeNode* nodePtr) {
   whileJumpLocation = cndJmpLoc;
 
   // the body statments can be inlined
-  inNonInlineableExp = 1;
+  inNonInlineableExp = 0;
 
   // output the body statements
   statement( statements );
